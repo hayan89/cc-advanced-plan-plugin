@@ -7,14 +7,30 @@ Claude Code plugin that automatically reviews plans against project directives a
 When you write or edit a plan file (`~/.claude/plans/*.md`), this plugin:
 
 1. **Detects** the plan file change via a PostToolUse hook
-2. **Triggers** the `plan-review` skill automatically
-3. **Reviews** the plan against 4 axes:
+2. **Assesses** plan complexity (line count, task count)
+3. **Selects strategy** based on complexity:
+   - Trivial: Sequential review (direct execution)
+   - Standard: 2 parallel subagents
+   - Complex: 4 parallel subagents
+   - Massive: Team mode with 4 reviewers
+4. **Reviews** the plan against 4 axes:
    - Directive compliance (CLAUDE.md, AGENTS.md, rules)
    - Project structure alignment (file paths, naming, tech stack)
    - Completeness & critical gaps (missing steps, tests, verification)
    - Risk assessment (security, data integrity, breaking changes)
-4. **Scores** issues (0-100 scale, lower is better)
-5. **Auto-fixes** minor issues (score contribution ≤5) and requests approval for major ones
+5. **Aggregates** results and scores (0-100 scale, lower is better)
+6. **Auto-fixes** minor issues (score ≤5) and requests approval for major ones
+
+## Complexity Tiers
+
+| Tier | Condition | Strategy | Agents |
+|------|-----------|----------|--------|
+| Massive | tasks >20 OR lines >500 | Team mode | 4 members |
+| Complex | tasks >10 OR lines >200 | Subagent parallel | 4 agents |
+| Trivial | tasks ≤3 AND lines ≤50 | Sequential | 0 (direct) |
+| Standard | everything else | Subagent parallel | 2 agents |
+
+Evaluated top-to-bottom, first match applies.
 
 ## Debounce
 
@@ -27,11 +43,7 @@ When you write or edit a plan file (`~/.claude/plans/*.md`), this plugin:
 ### Local installation
 
 ```bash
-# Copy plugin to Claude Code plugins directory
 cp -r plan-review/ ~/.claude/plugins/plan-review/
-
-# Register in settings.json (enabledPlugins)
-# Or use: claude plugin marketplace add ~/.claude/plugins/plan-review
 ```
 
 ### Manual invocation
@@ -45,14 +57,20 @@ cp -r plan-review/ ~/.claude/plugins/plan-review/
 ```
 plan-review/
 ├── .claude-plugin/
-│   └── plugin.json              # Plugin manifest
+│   └── plugin.json
 ├── hooks/
-│   ├── hooks.json               # PostToolUse hook definition
-│   └── detect-plan-write.mjs    # Plan file write detection script
+│   ├── hooks.json
+│   └── detect-plan-write.mjs
 ├── skills/
 │   └── plan-review/
-│       ├── SKILL.md             # Review skill definition
-│       └── review-prompt.md     # 4-axis review prompt template
+│       ├── SKILL.md
+│       ├── aggregation.md
+│       └── phases/
+│           ├── common-context.md
+│           ├── phase-1-directive.md
+│           ├── phase-2-structure.md
+│           ├── phase-3-completeness.md
+│           └── phase-4-risk.md
 ├── README.md
 └── LICENSE
 ```
