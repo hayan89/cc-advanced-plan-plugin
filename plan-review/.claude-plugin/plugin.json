@@ -1,0 +1,8 @@
+{
+  "name": "plan-review",
+  "description": "Automatic plan review plugin — validates plans against project directives and codebase structure after plan file creation",
+  "version": "1.0.0",
+  "author": { "name": "hyunseung" },
+  "license": "MIT",
+  "keywords": ["plan", "review", "automation", "harness", "claude-code"]
+}
