@@ -2,13 +2,14 @@
 name: plan-review
 description: >
   플랜 파일 작성 후 자동 트리거 또는 수동 호출(/plan-review)하여, 플랜을 프로젝트 지시사항(CLAUDE.md 등)과
-  코드베이스 구성에 대해 비판적으로 검토합니다. PostToolUse 훅의 [MAGIC KEYWORD: plan-review]로
-  자동 활성화됩니다.
+  코드베이스 구성에 대해 비판적으로 검토합니다. 복잡도에 따라 순차/subagent 병렬/team mode를 자동 선택합니다.
+  PostToolUse 훅의 [MAGIC KEYWORD: plan-review]로 자동 활성화됩니다.
 ---
 
-# Plan Review
+# Plan Review v2.0
 
 플랜 파일을 프로젝트 지시사항과 코드베이스 구성에 대해 4축으로 비판적 검토하는 스킬.
+복잡도에 따라 순차 실행, subagent 병렬, 또는 team mode를 자동 선택합니다.
 
 ## When This Activates
 
@@ -19,77 +20,204 @@ description: >
 
 ### Step 1: Context Collection
 
-다음 파일들을 수집하세요:
+다음을 수집하세요:
 
 1. **플랜 파일:** 훅이 전달한 경로, 없으면 가장 최근 수정된 `~/.claude/plans/*.md`
-2. **지시사항 문서:**
+2. **지시사항 문서 경로 목록:**
    - `~/.claude/CLAUDE.md` (글로벌)
    - 프로젝트 루트의 `CLAUDE.md` (있으면)
    - 프로젝트 루트의 `AGENTS.md` (있으면)
    - `.claude/rules/*.md` (있으면)
-3. **프로젝트 구조:**
-   - `Glob("**/*")` 또는 `ls` 로 주요 디렉토리 구조 파악
-   - `package.json`, `go.mod`, `Cargo.toml` 등 기술 스택 파일 확인
+3. **프로젝트 루트:** 현재 작업 디렉토리
 
-### Step 2: Read Review Template
+플랜 파일의 전체 내용을 Read로 읽어 두세요 — 이후 단계에서 에이전트에게 전달합니다.
 
-검토 프롬프트 템플릿을 읽으세요:
+### Step 2: Complexity Assessment
 
+플랜 파일을 분석하여 복잡도를 판정합니다:
+
+1. **라인 수:** 플랜 파일의 전체 라인 수
+2. **태스크 수:** `### Task`, `## Step`, `### Step` 패턴으로 시작하는 헤딩의 수
+
+**전략 매핑 (위에서부터 순서대로 평가, 첫 번째 일치 적용):**
+
+| 우선순위 | 복잡도 | 조건 | 전략 |
+|---------|--------|------|------|
+| 1 | Massive | 태스크 >20 OR 라인 >500 | → Step 3D: Team mode (4명) |
+| 2 | Complex | 태스크 >10 OR 라인 >200 | → Step 3C: Subagent 4개 병렬 |
+| 3 | Trivial | 태스크 ≤3 AND 라인 ≤50 | → Step 3A: Sequential |
+| 4 | Standard | 그 외 모두 | → Step 3B: Subagent 2개 병렬 |
+
+판정된 복잡도와 선택된 전략을 사용자에게 한 줄로 보고하세요:
 ```
-Read skills/plan-review/review-prompt.md
+Plan complexity: {tier} ({N} tasks, {M} lines) → {strategy}
 ```
 
-이 템플릿의 4개 Phase를 순서대로 실행합니다.
+### Step 3A: Sequential (Trivial)
 
-### Step 3: Execute 4-Axis Review
+`skills/plan-review/phases/` 디렉토리의 파일을 읽고 순차적으로 직접 실행합니다.
 
-review-prompt.md의 지시에 따라 검토를 수행하세요:
+1. `skills/plan-review/phases/common-context.md`를 읽어 캘리브레이션 규칙 숙지
+2. `skills/plan-review/phases/phase-1-directive.md` 읽고 실행
+3. `skills/plan-review/phases/phase-2-structure.md` 읽고 실행
+4. `skills/plan-review/phases/phase-3-completeness.md` 읽고 실행
+5. `skills/plan-review/phases/phase-4-risk.md` 읽고 실행
 
-- **Phase 1:** Directive Compliance Check — 지시사항 위반 여부
-- **Phase 2:** Project Structure Alignment — 코드베이스 구성 부합
-- **Phase 3:** Completeness & Critical Gaps — 누락/불완전 사항
-- **Phase 4:** Risk Assessment — 보안/성능/호환성 위험
+각 Phase 결과를 skills/plan-review/phases/common-context.md의 Output Format에 맞춰 기록.
+→ Step 4로 이동.
 
-각 Phase에서 이슈를 발견하면 점수를 부여합니다.
+### Step 3B: Subagent Parallel (Standard — 2 agents)
 
-### Step 4: Score & Decide
+`skills/plan-review/phases/common-context.md`를 Read로 읽어 내용을 확보합니다.
+해당 Phase 파일도 각각 Read로 읽습니다.
 
-총점을 산출하고 결과를 처리합니다:
+Agent tool로 **2개를 동시에** 디스패치하세요 (하나의 메시지에서 2개 Agent tool call):
 
-**총점 ≤ 20 (PASS):**
+**Agent A — Directive & Risk:**
+```
+당신은 plan-review 검토 에이전트입니다.
+아래 플랜을 Phase 1 (Directive Compliance)과 Phase 4 (Risk Assessment)에 대해 검토하세요.
+
+== Common Context ==
+{common-context.md의 전체 내용을 여기에 삽입}
+
+== Phase 1 Instructions ==
+{phase-1-directive.md의 전체 내용을 여기에 삽입}
+
+== Phase 4 Instructions ==
+{phase-4-risk.md의 전체 내용을 여기에 삽입}
+
+== Plan File ==
+{플랜 파일 전문을 여기에 삽입}
+
+== Directive File Paths ==
+다음 경로의 지시사항 파일을 Read tool로 읽어 검토에 활용하세요:
+{지시사항 파일 경로 목록}
+
+프로젝트 루트: {cwd}
+
+각 Phase에 대해 Output Format에 맞춰 결과를 반환하세요.
+Phase 1 결과와 Phase 4 결과를 각각 별도로 출력하세요.
+```
+
+**Agent B — Structure & Completeness:**
+```
+당신은 plan-review 검토 에이전트입니다.
+아래 플랜을 Phase 2 (Project Structure Alignment)와 Phase 3 (Completeness & Critical Gaps)에 대해 검토하세요.
+
+== Common Context ==
+{common-context.md의 전체 내용을 여기에 삽입}
+
+== Phase 2 Instructions ==
+{phase-2-structure.md의 전체 내용을 여기에 삽입}
+
+== Phase 3 Instructions ==
+{phase-3-completeness.md의 전체 내용을 여기에 삽입}
+
+== Plan File ==
+{플랜 파일 전문을 여기에 삽입}
+
+== Directive File Paths ==
+다음 경로의 지시사항 파일을 Read tool로 읽어 검토에 활용하세요:
+{지시사항 파일 경로 목록}
+
+프로젝트 루트: {cwd}
+
+각 Phase에 대해 Output Format에 맞춰 결과를 반환하세요.
+Phase 2 결과와 Phase 3 결과를 각각 별도로 출력하세요.
+```
+
+두 에이전트의 결과를 수집 → Step 4로 이동.
+
+### Step 3C: Subagent Parallel (Complex — 4 agents)
+
+`skills/plan-review/phases/common-context.md`와 각 Phase 파일을 Read로 읽습니다.
+
+Agent tool로 **4개를 동시에** 디스패치하세요 (하나의 메시지에서 4개 Agent tool call):
+
+각 에이전트 프롬프트:
+```
+당신은 plan-review 검토 에이전트입니다.
+아래 플랜을 Phase {N} ({Phase 이름})에 대해 검토하세요.
+
+== Common Context ==
+{common-context.md 전체 내용}
+
+== Phase {N} Instructions ==
+{phase-N-*.md 전체 내용}
+
+== Plan File ==
+{플랜 파일 전문}
+
+== Directive File Paths ==
+{지시사항 경로 목록}
+
+프로젝트 루트: {cwd}
+
+Output Format에 맞춰 결과를 반환하세요.
+```
+
+4개 에이전트 결과 수집 → Step 4로 이동.
+
+### Step 3D: Team Mode (Massive — 4 members)
+
+`skills/plan-review/phases/common-context.md`와 각 Phase 파일을 Read로 읽습니다.
+
+1. **TeamCreate로 팀 생성:**
+   ```
+   TeamCreate: name="plan-review-team"
+   ```
+
+2. **4개 멤버에게 SendMessage로 태스크 할당:**
+   각 멤버에게 Step 3C와 동일한 프롬프트를 SendMessage로 전달.
+   멤버 이름: `reviewer-phase-1`, `reviewer-phase-2`, `reviewer-phase-3`, `reviewer-phase-4`
+
+3. **결과 수집:** 4명의 결과를 모두 수신할 때까지 대기.
+
+4개 멤버 결과 수집 → Step 4로 이동.
+
+### Step 4: Aggregate Results
+
+`skills/plan-review/aggregation.md`를 Read로 읽고 그 규칙에 따라 결과를 집계하세요:
+
+1. 각 에이전트/멤버의 결과에서 PHASE, SCORE, ISSUES를 파싱
+2. 총점 합산
+3. 이슈 목록 병합 (severity 순 정렬, 중복 제거)
+4. 판정 결정 (PASS / NEEDS_REVISION / MAJOR_ISSUES)
+5. aggregation.md의 Final Output Format으로 결과 표시
+
+### Step 5: Act on Verdict
+
+**PASS (총점 ≤ 20):**
 - "플랜 검토 완료. 큰 문제 없음." 보고
-- 세션 상태 업데이트 후 종료
+- Step 6으로 이동
 
-**총점 21~50 (NEEDS_REVISION):**
-- 개별 항목 점수 ≤ 5: 플랜 파일에 자동 수정 반영
-- 개별 항목 점수 > 5: AskUserQuestion으로 사용자 승인 요청
-- 수정 사항을 before/after diff로 제시
+**NEEDS_REVISION (총점 21~50):**
+- Auto-fixable 항목 (개별 Score ≤ 5): 플랜 파일에 직접 수정 반영, before/after diff 표시
+- Requires approval 항목 (개별 Score > 5): AskUserQuestion으로 사용자 승인 요청
+- 수정 후 Step 6으로 이동
 
-**총점 > 50 (MAJOR_ISSUES):**
+**MAJOR_ISSUES (총점 > 50):**
 - 모든 이슈를 severity 순으로 나열
 - Critical 이슈는 반드시 사용자 확인 후 수정
 - 플랜의 근본적 재작성이 필요할 수 있음을 안내
+- Step 6으로 이동
 
-### Step 5: Update Session State
+### Step 6: Update Session State
 
-검토 완료 후 세션 상태를 업데이트하세요:
+세션 상태를 업데이트하세요:
 
 **상태 파일 경로:** `~/.claude/plugins/data/plan-review/sessions/{sessionId}.json`
 
-```json
+```bash
+mkdir -p ~/.claude/plugins/data/plan-review/sessions
+cat > ~/.claude/plugins/data/plan-review/sessions/{sessionId}.json << 'EOF'
 {
   "review_count": <이전 값 + 1>,
   "last_score": <이번 검토 총점>,
   "plan_path": "<검토한 플랜 파일 경로>",
   "last_reviewed_at": "<ISO 8601 타임스탬프>"
 }
-```
-
-Bash를 사용하여 JSON 파일을 작성하세요:
-```bash
-mkdir -p ~/.claude/plugins/data/plan-review/sessions
-cat > ~/.claude/plugins/data/plan-review/sessions/{sessionId}.json << 'EOF'
-{ ... }
 EOF
 ```
 
@@ -100,3 +228,4 @@ EOF
 - **Calibration:** 실제 구현 실패를 유발할 문제만 플래그. 스타일 선호도나 이론적 문제 무시.
 - **Evidence 필수:** 모든 이슈에 file:line 참조 또는 grep 결과 등 근거 포함.
 - **범위 준수:** 플랜 범위 밖의 개선 제안 금지.
+- **에이전트 실패 처리:** 에이전트가 실패하거나 결과를 반환하지 않으면, 해당 Phase 점수 = 0으로 처리하고 나머지 결과로 부분 집계. 실패한 Phase를 경고로 표시.
