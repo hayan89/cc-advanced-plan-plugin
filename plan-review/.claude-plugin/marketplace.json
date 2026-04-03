@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "plan-review",
+  "description": "Plan review marketplace — automatic plan validation against project directives",
+  "owner": {
+    "name": "hyunseung"
+  },
+  "plugins": [
+    {
+      "name": "plan-review",
+      "description": "Automatic plan review plugin — validates plans against project directives and codebase structure after plan file creation",
+      "version": "1.0.0",
+      "author": {
+        "name": "hyunseung"
+      },
+      "source": "./"
+    }
+  ],
+  "version": "1.0.0"
+}
