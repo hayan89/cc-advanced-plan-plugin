@@ -11,11 +11,12 @@
 
 | Risk Type | What to Check | Score |
 |-----------|--------------|-------|
-| **Security** | SQL injection, XSS, 하드코딩된 시크릿, 과도하게 넓은 권한, 안전하지 않은 역직렬화 | **+15** (Critical) |
 | **Data integrity** | 롤백 없는 마이그레이션, 백업 없는 파괴적 작업, 레이스 컨디션 | **+10** (Critical) |
 | **Breaking changes** | 마이그레이션 경로 없는 퍼블릭 API 변경, 버전닝 없는 스키마 변경 | **+10** (Critical) |
 | **Performance** | N+1 쿼리, 무한 루프, 페이지네이션 누락, 대용량 파일 메모리 로드 | **+5** (Important) |
 | **Compatibility** | 버전 충돌, 플랫폼 가정, 디프리케이트된 API 사용 | **+5** (Important) |
+
+> **참고:** 보안(Security) 관련 위험은 Phase 5 (Security Assessment)에서 전담 검토합니다. 이 Phase에서는 보안 외 위험에 집중하세요.
 
 ## Important
 

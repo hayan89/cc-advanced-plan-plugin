@@ -22,7 +22,7 @@
 
 ```
 총점 = sum(모든 Phase SCORE)
-최대 = 100 (Phase 1: 30 + Phase 2: 30 + Phase 3: 25 + Phase 4: 15)
+최대 = 120 (Phase 1: 30 + Phase 2: 30 + Phase 3: 25 + Phase 4: 15 + Phase 5: 20)
 ```
 
 ## Step 3: Merge Issues
@@ -35,9 +35,9 @@
 
 | 총점 | 판정 | 동작 |
 |------|------|------|
-| ≤ 20 | **PASS** | "플랜 검토 완료. 큰 문제 없음." 보고 후 종료 |
-| 21~50 | **NEEDS_REVISION** | Auto-fix + 승인 게이트 (아래 참조) |
-| > 50 | **MAJOR_ISSUES** | 전체 이슈 나열, Critical은 사용자 확인 필수 |
+| ≤ 24 | **PASS** | "플랜 검토 완료. 큰 문제 없음." 보고 후 종료 |
+| 25~60 | **NEEDS_REVISION** | Auto-fix + 승인 게이트 (아래 참조) |
+| > 60 | **MAJOR_ISSUES** | 전체 이슈 나열, Critical은 사용자 확인 필수 |
 
 ## Step 5: Apply Fixes (NEEDS_REVISION / MAJOR_ISSUES)
 
@@ -65,7 +65,7 @@
 
 ```
 ### Plan Review Summary
-- Total Score: {score}/100
+- Total Score: {score}/120
 - Verdict: {PASS|NEEDS_REVISION|MAJOR_ISSUES}
 - Strategy Used: {Sequential|Subagent 2x|Subagent 4x|Team mode}
 - Auto-fixed: {count} items

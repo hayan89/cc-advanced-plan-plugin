@@ -90,7 +90,7 @@ async function main() {
     }
 
     // 4. Debounce: max 2 auto-reviews, or skip if last score was good enough
-    if (state.review_count >= 2 || state.last_score <= 20) {
+    if (state.review_count >= 2 || state.last_score <= 24) {
       noop();
       return;
     }
