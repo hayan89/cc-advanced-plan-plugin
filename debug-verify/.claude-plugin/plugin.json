@@ -1,0 +1,8 @@
+{
+  "name": "debug-verify",
+  "description": "Debug verification plugin — validates debugging hypotheses against real data using Advocate + Challenger dual-agent Kapasi Loop. Auto-triggers on debug plan detection, integrates with plan-review for fix plan validation.",
+  "version": "1.0.0",
+  "author": { "name": "hyunseung" },
+  "license": "MIT",
+  "keywords": ["debug", "verify", "kapasi", "loop", "hypothesis", "advocate", "challenger", "claude-code"]
+}
