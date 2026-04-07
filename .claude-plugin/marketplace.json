@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "plan-review",
-  "description": "Plan review marketplace — parallel plan validation against project directives and codebase structure",
+  "name": "newworld-harness",
+  "description": "Harness engineering marketplace — plan validation and debug verification plugins",
   "owner": {
     "name": "hyunseung"
   },
@@ -9,12 +9,21 @@
     {
       "name": "plan-review",
       "description": "Automatic plan review plugin — validates plans against project directives and codebase structure. Supports parallel review via subagent or team mode.",
-      "version": "2.0.0",
+      "version": "2.2.0",
       "author": {
         "name": "hyunseung"
       },
       "source": "./plan-review"
+    },
+    {
+      "name": "debug-verify",
+      "description": "Debug verification plugin — validates debugging hypotheses against real data using Advocate + Challenger dual-agent Kapasi Loop.",
+      "version": "1.0.0",
+      "author": {
+        "name": "hyunseung"
+      },
+      "source": "./debug-verify"
     }
   ],
-  "version": "2.0.0"
+  "version": "3.0.0"
 }
