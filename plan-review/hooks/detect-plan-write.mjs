@@ -75,6 +75,36 @@ async function main() {
       return;
     }
 
+    // Guard: skip if this is a debugging plan — defer to debug-verify plugin
+    const DEBUG_KEYWORDS = [
+      'debug', 'debugging', '디버깅', '디버그',
+      '버그', 'bug',
+      '원인', 'root cause', 'root-cause',
+      '가설', 'hypothesis', 'hypotheses',
+      '증상', 'symptom',
+      '재현', 'reproduce', 'reproduction',
+      '스택트레이스', 'stacktrace', 'stack trace',
+      '에러 분석', 'error analysis',
+      '로그 분석', 'log analysis',
+    ];
+
+    let planContent = '';
+    try {
+      planContent = readFileSync(filePath, 'utf-8');
+    } catch {
+      planContent = data.tool_input?.content || '';
+    }
+
+    const lower = planContent.toLowerCase();
+    let debugKeywordCount = 0;
+    for (const kw of DEBUG_KEYWORDS) {
+      if (lower.includes(kw.toLowerCase())) debugKeywordCount++;
+    }
+    if (debugKeywordCount >= 2) {
+      noop();
+      return;
+    }
+
     // 3. Load session state
     const sessionId = data.session_id || data.sessionId || 'unknown';
     const dataDir = join(home, '.claude', 'plugins', 'data', 'plan-review', 'sessions');
