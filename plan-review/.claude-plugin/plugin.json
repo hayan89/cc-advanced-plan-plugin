@@ -1,7 +1,7 @@
 {
   "name": "plan-review",
-  "description": "Automatic plan review plugin — validates plans against project directives and codebase structure after plan file creation. Supports parallel review via subagent or team mode.",
-  "version": "2.1.0",
+  "description": "Automatic plan review plugin — validates plans against project directives and codebase structure after plan file creation. Supports parallel review via subagent or team mode, with iterative deep re-review for false positive elimination.",
+  "version": "2.2.0",
   "author": { "name": "hyunseung" },
   "license": "MIT",
   "keywords": ["plan", "review", "automation", "harness", "parallel", "subagent", "team", "claude-code"]

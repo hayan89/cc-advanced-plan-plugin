@@ -6,10 +6,11 @@ description: >
   PostToolUse 훅의 [MAGIC KEYWORD: plan-review]로 자동 활성화됩니다.
 ---
 
-# Plan Review v2.0
+# Plan Review v2.2
 
 플랜 파일을 프로젝트 지시사항과 코드베이스 구성에 대해 5축으로 비판적 검토하는 스킬.
 복잡도에 따라 순차 실행, subagent 병렬, 또는 team mode를 자동 선택합니다.
+첫 번째 리뷰에서 이슈 발견 시, iterative deep re-review로 false positive을 제거하고 이슈 검증 정확도를 높입니다.
 
 ## When This Activates
 
@@ -217,24 +218,98 @@ Phase 4 결과와 Phase 5 결과를 각각 별도로 출력하세요.
 4. 판정 결정 (PASS / NEEDS_REVISION / MAJOR_ISSUES)
 5. aggregation.md의 Final Output Format으로 결과 표시
 
-### Step 5: Act on Verdict
+### Step 5: Iterative Deep Review
+
+이 단계는 첫 번째 리뷰에서 이슈가 발견된 경우에만 실행됩니다.
+동일 실행 내에서 2~3회 추가 deep re-review를 수행하여 false positive을 제거하고 이슈 검증 정확도를 높입니다.
+
+#### 5.1 진입 조건 확인
+
+다음 조건을 **모두** 만족하면 deep re-review 루프에 진입:
+- 이번 세션의 review_count가 이 리뷰 시작 시 0이었음 (첫 번째 리뷰)
+- Step 4의 총점이 > 0
+
+하나라도 불충족 시 → Step 6으로 이동.
+
+#### 5.2 Re-Review 루프 (최대 2회 반복)
+
+iteration = 1로 시작. 아래를 반복:
+
+**1. 종료 조건 확인 (하나라도 충족 시 루프 탈출):**
+- 직전 iteration 총점이 ≤ 24 → 루프 종료
+- iteration > 2 → 루프 종료
+- 직전 iteration 대비 점수 감소가 < 3 AND iteration > 1 → 루프 종료
+
+**2. Phase 선별:**
+- 직전 iteration에서 SCORE > 5인 Phase → `full_review_phases` (Template A 사용)
+- 직전 iteration에서 SCORE 1~5인 Phase → `lightweight_phases` (Template B 사용)
+- 직전 iteration에서 SCORE = 0인 Phase → `skipped_phases` (0점 유지, 디스패치 안 함)
+
+**3. Re-Review 전략 결정:**
+
+Step 2에서 결정된 전략을 한 단계 다운시프트:
+
+| 초기 전략 | Re-Review 전략 |
+|-----------|---------------|
+| Team mode (4명) | Subagent 4x 병렬 |
+| Subagent 4x 병렬 | Subagent 2x 병렬 |
+| Subagent 2x 병렬 | Sequential |
+| Sequential | Sequential |
+
+단, `full_review_phases` 수가 2 이하이면 무조건 Sequential.
+
+**4. Re-Review 디스패치:**
+
+`skills/plan-review/phases/deep-review-context.md`를 Read로 읽습니다.
+
+각 `full_review_phases`에 대해:
+- deep-review-context.md의 **Template A** (Full Re-Review) 사용
+- `{previous_findings}`에 직전 iteration의 해당 Phase ISSUES 삽입
+- `{previous_score}`에 직전 iteration의 해당 Phase SCORE 삽입
+- `{phase_scores_summary}`에 전체 Phase 스코어 요약 삽입
+- 해당 Phase의 phase-N-*.md 지시사항 포함
+
+각 `lightweight_phases`에 대해:
+- deep-review-context.md의 **Template B** (Lightweight Confirmation) 사용
+- `{issues_list}`에 직전 iteration의 해당 Phase ISSUES 삽입
+
+`skipped_phases`는 디스패치하지 않음 (SCORE: 0 유지).
+
+선택된 전략에 따라 Agent tool 또는 직접 실행으로 디스패치.
+
+**5. 결과 집계:**
+
+aggregation.md의 **Multi-Iteration Aggregation Rules**에 따라 결과 처리:
+- 확인된 이슈 / 제거된 false positive / 새 이슈 분류
+- 총점 재계산
+- iteration 결과를 pass_history에 추가
+
+iteration++, 루프 상단으로 복귀.
+
+#### 5.3 최종 보고서 생성
+
+루프 종료 후, aggregation.md의 **Deep Review Final Output Format**에 따라 통합 보고서 생성.
+pass_history를 Score Progression으로 표시.
+→ Step 6으로 이동 (최종 통합 결과를 사용).
+
+### Step 6: Act on Verdict
 
 **PASS (총점 ≤ 24):**
 - "플랜 검토 완료. 큰 문제 없음." 보고
-- Step 6으로 이동
+- Step 7으로 이동
 
 **NEEDS_REVISION (총점 25~60):**
 - Auto-fixable 항목 (개별 Score ≤ 5): 플랜 파일에 직접 수정 반영, before/after diff 표시
 - Requires approval 항목 (개별 Score > 5): AskUserQuestion으로 사용자 승인 요청
-- 수정 후 Step 6으로 이동
+- 수정 후 Step 7으로 이동
 
 **MAJOR_ISSUES (총점 > 60):**
 - 모든 이슈를 severity 순으로 나열
 - Critical 이슈는 반드시 사용자 확인 후 수정
 - 플랜의 근본적 재작성이 필요할 수 있음을 안내
-- Step 6으로 이동
+- Step 7으로 이동
 
-### Step 6: Update Session State
+### Step 7: Update Session State
 
 세션 상태를 업데이트하세요:
 

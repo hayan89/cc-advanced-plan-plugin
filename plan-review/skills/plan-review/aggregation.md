@@ -80,3 +80,81 @@
 ### Pending Approval
 {사용자 승인 대기 항목}
 ```
+
+## Multi-Iteration Aggregation Rules
+
+Iterative Deep Re-Review (Step 5)에서 여러 패스의 결과를 집계하는 규칙.
+
+### Issue Identity Matching
+
+두 이슈가 "동일"한지 판정:
+- **같은 Phase 번호** AND **같은 Location** (또는 겹치는 Location) = 동일 이슈
+- Problem description은 보조 매칭 기준 (같은 카테고리 + 같은 대상 = 유사)
+
+### Issue Status Classification
+
+| Status | 조건 | 처리 |
+|--------|------|------|
+| `confirmed` | 이전 패스에 존재 + 재검증에서 CONFIRMED | 최종 보고서에 포함, 점수 반영 |
+| `false_positive` | 이전 패스에 존재 + 재검증에서 FALSE_POSITIVE로 명시적 반박 | 최종 보고서의 "False Positives Removed" 섹션에 이동, 점수 차감 |
+| `unverified` | 이전 패스에 존재 + 재검증에서 언급 안 됨 | 최종 보고서에 `[unverified]` 태그 붙여 포함, 점수 유지 |
+| `new` | 재검증에서 새로 발견됨 (Status: NEW) | 최종 보고서에 `[deep-review]` 태그 붙여 포함, 점수 반영 |
+
+### Score Computation
+
+- **최종 점수:** 마지막 iteration의 per-phase 점수를 사용
+- **Skip된 Phase:** 이전 iteration에서 0점이어서 skip된 Phase는 0점 유지
+- **Lightweight Phase:** 확인 결과에 따라 조정된 점수 사용 (false positive 제거 시 감소)
+- **False positive 처리:** 재검증에서 false positive로 판정된 이슈의 점수는 해당 Phase 총점에서 차감
+
+### Pass History Tracking
+
+각 iteration의 per-phase 점수를 기록하여 Score Progression에 사용:
+```
+pass_history = [
+  { pass: 1, scores: { p1: N, p2: N, p3: N, p4: N, p5: N }, total: N },
+  { pass: 2, scores: { p1: N, p2: N, p3: N, p4: N, p5: N }, total: N },
+  ...
+]
+```
+
+## Deep Review Final Output Format
+
+Iterative Deep Re-Review가 실행된 경우 아래 확장 형식을 사용:
+
+```
+### Plan Review Summary (Deep Review)
+- Total Score: {최종 총점}/120
+- Verdict: {PASS|NEEDS_REVISION|MAJOR_ISSUES}
+- Strategy Used: {초기 전략}
+- Review Depth: {N} passes (initial + {N-1} deep re-review)
+- Score Progression: Pass 1: {s1} → Pass 2: {s2} [→ Pass 3: {s3}]
+- Issues Confirmed: {count} | False Positives Removed: {count} | New Issues Found: {count}
+- Auto-fixed: {count} items
+- Requires approval: {count} items
+
+### Score Breakdown by Phase
+| Phase | Pass 1 | Pass 2 | Pass 3 | Final |
+|-------|--------|--------|--------|-------|
+| 1. Directive | {s} | {s} | {s/-} | {s} |
+| 2. Structure | {s} | {s/skipped} | {s/-} | {s} |
+| 3. Completeness | {s} | {s/skipped} | {s/-} | {s} |
+| 4. Risk | {s} | {s/skipped} | {s/-} | {s} |
+| 5. Security | {s} | {s/skipped} | {s/-} | {s} |
+
+### Issues (by severity)
+{confirmed 이슈 먼저}
+{[deep-review] 태그 이슈 다음}
+{[unverified] 태그 이슈 마지막}
+
+### False Positives Removed
+{제거된 이슈 + 이유 목록}
+
+### Auto-Applied Fixes
+{적용된 자동 수정 diff}
+
+### Pending Approval
+{사용자 승인 대기 항목}
+```
+
+Deep Re-Review가 실행되지 않은 경우 (진입 조건 미충족), 기존 Final Output Format을 그대로 사용.

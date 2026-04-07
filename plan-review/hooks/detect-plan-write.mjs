@@ -108,6 +108,7 @@ async function main() {
           `- 대상 파일: ${filePath}`,
           `- 세션 ID: ${sessionId}`,
           `- 현재 리뷰 횟수: ${state.review_count}`,
+          `- 첫 번째 리뷰 여부: ${state.review_count === 0 ? 'yes' : 'no'}`,
           `- 이전 점수: ${state.last_score}`,
           ``,
           `Skill: plan-review:plan-review`,
