@@ -34,7 +34,10 @@
 PHASE: {Phase 번호}
 SCORE: {해당 Phase 총점}
 ISSUES:
-- [{CRITICAL|IMPORTANT|MINOR}] {구체적 설명} | Score: +{n} | Location: Plan task {N} / line {ref} | Evidence: {file:line 또는 grep 결과} | Fix: {플랜에 적용할 정확한 수정 텍스트} | Auto-fixable: {yes|no}
+- [{CRITICAL|IMPORTANT|MINOR}] {구체적 설명} | Score: +{n} | Location: Plan task {N} / line {ref} | Evidence: {file:line 또는 grep 결과}
+  FIX_CANDIDATES:
+    - [recommended] {한줄 설명} | Apply: {플랜에 적용할 정확한 수정 텍스트 or 전략} | Trade-off: {장단점/영향}
+    - [alt] {한줄 설명} | Apply: {...} | Trade-off: {...}
 ```
 
 ### 이슈가 없는 경우:
@@ -48,5 +51,9 @@ ISSUES: none
 ### 규칙:
 - PHASE와 SCORE는 반드시 첫 두 줄에 위치
 - ISSUES 목록의 각 항목은 `- [` 로 시작
+- 각 이슈 아래에 `FIX_CANDIDATES:` 블록을 들여쓴 형태로 포함. 후보는 최소 1개(`[recommended]`) 필수.
+- **합리적 대안이 있을 때만 2개 이상 반환.** 수정 방향이 하나뿐이면 `[recommended]` 1개만. 인위적으로 후보를 만들지 않는다.
+- `Apply`는 플랜에 그대로 넣을 수 있는 텍스트 또는 명확한 수정 전략. `Trade-off`는 후보별 장단점/영향 (단일 후보면 `(no alternative)` 허용).
 - Score 합계가 SCORE 값과 일치해야 함
 - Evidence 없는 이슈는 무효 (반드시 파일 경로 또는 grep 결과 포함)
+- 구 포맷 `| Fix: {...} | Auto-fixable: {yes|no}`는 deprecated. 집계 단계에서 폴백 파싱은 지원하나, 신규 출력은 `FIX_CANDIDATES` 블록 사용 필수.

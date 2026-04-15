@@ -64,6 +64,18 @@
 가설과 무관하게, 수집된 증거에서 다른 가능한 원인이 보이면 기록하세요.
 이는 Challenger 에이전트에게 유용한 단서를 제공합니다.
 
+### 6. 수정 방향 후보 (CONFIRMED 전용)
+
+전체 판정이 CONFIRMED일 때만 수행. REFUTED/INCONCLUSIVE면 스킵.
+
+확인된 원인에 대한 수정 방향을 1개 이상 제안하세요. 형식은 `FIX_CANDIDATES` 블록(아래 Output Format 참조).
+
+- **후보 수 원칙:** 실제로 합리적 대안이 있을 때만 2개 이상 제시. 수정 방향이 하나뿐이면 `[recommended]` 1개만. 인위적으로 후보를 만들지 않는다.
+- **각 후보 필드:**
+  - `Apply`: 수정 방향 요약 또는 구체적 수정 전략 (코드 경로, 함수명, 변경 방식)
+  - `Trade-off`: 장단점, 영향 범위, 리스크
+- **재루프 시:** 이전 라운드의 Challenger가 제안한 `ALTERNATIVE_HYPOTHESES` 중 수정 방향으로 이어지는 항목이 있으면 `[alt]`로 흡수.
+
 ## Calibration Rules
 
 1. **실제 증거만 사용.** 추측이나 가정으로 판정하지 않음.
@@ -80,8 +92,11 @@ CLAIMS:
 - [{CONFIRMED|REFUTED|INCONCLUSIVE}] {주장 설명} | Evidence: {증거 소스:위치} | Data: {수집된 데이터 요약}
 ALTERNATIVE_CAUSES:
 - {대안적 원인 설명} | Likelihood: {HIGH|MEDIUM|LOW} | Evidence: {근거}
+FIX_CANDIDATES:
+- [recommended] {한줄 설명} | Apply: {수정 전략/경로} | Trade-off: {장단점/영향}
+- [alt] {한줄 설명} | Apply: {...} | Trade-off: {...}
 NEXT_ACTIONS:
-- {다음 검증 단계 또는 수정 제안}
+- {다음 검증 단계 또는 기타 제안}
 MANUAL_CHECKS:
 - {도구 미사용으로 수동 확인 필요한 항목} | Reason: {왜 자동 확인 불가한지}
 ```
@@ -90,4 +105,8 @@ MANUAL_CHECKS:
 - VERDICT와 CONFIDENCE는 반드시 첫 두 줄에 위치
 - CLAIMS의 각 항목은 `- [` 로 시작
 - Evidence 없는 claim 판정은 무효 (INCONCLUSIVE로 처리)
+- **`FIX_CANDIDATES`는 VERDICT == CONFIRMED일 때만 필수.** REFUTED/INCONCLUSIVE면 생략.
+- CONFIRMED인데 수정 방향이 명확치 않아 후보를 제시할 수 없으면 `FIX_CANDIDATES: none`으로 명시.
+- 후보는 합리적 대안이 있을 때만 2개 이상. 인위적 생성 금지. 단일 후보여도 `[recommended]` 마커 필수.
 - MANUAL_CHECKS가 없으면 생략 가능
+- 구 `NEXT_ACTIONS`의 "수정 제안"은 이제 `FIX_CANDIDATES`로 이동. `NEXT_ACTIONS`는 "추가 검증 단계"만 담는다.
