@@ -298,16 +298,20 @@ pass_history를 Score Progression으로 표시.
 - "플랜 검토 완료. 큰 문제 없음." 보고
 - Step 7으로 이동
 
-**NEEDS_REVISION (총점 25~60):**
-- Auto-fixable 항목 (개별 Score ≤ 5): 플랜 파일에 직접 수정 반영, before/after diff 표시
-- Requires approval 항목 (개별 Score > 5): AskUserQuestion으로 사용자 승인 요청
-- 수정 후 Step 7으로 이동
+**NEEDS_REVISION (총점 25~60) / MAJOR_ISSUES (총점 > 60):**
 
-**MAJOR_ISSUES (총점 > 60):**
-- 모든 이슈를 severity 순으로 나열
-- Critical 이슈는 반드시 사용자 확인 후 수정
+각 이슈를 `len(FIX_CANDIDATES)`와 Score 기준 **3-way 분기**로 처리합니다 (aggregation.md Step 5 규칙):
+
+- **Case A (단일 후보 + Score ≤ 5):** 플랜 파일에 직접 auto-fix, before/after diff 표시.
+- **Case B (단일 후보 + Score > 5):** AskUserQuestion(multiSelect: false)으로 "적용 (Recommended) / 적용 안 함" 승인 게이트.
+- **Case C (후보 ≥ 2, severity 무관):** AskUserQuestion(multiSelect: false)으로 후보 중 하나를 선택. 옵션 최대 4개 (상위 3개 + "모두 건너뛰기"), `[recommended]` 우선 + 원 순서. 절단된 후보는 질문 description에 `"[alt] 외 N건 생략"`으로 명시.
+- **후보 0개 (수정 제안 없음):** 자동 적용 금지. `Pending (no fix proposed)`로 보고서에 별도 나열.
+
+MAJOR_ISSUES의 경우 추가로:
+- 모든 이슈를 severity 순으로 나열하여 사용자에게 조감 제공
 - 플랜의 근본적 재작성이 필요할 수 있음을 안내
-- Step 7으로 이동
+
+수정/선택 완료 후 Step 7로 이동.
 
 ### Step 7: Update Session State
 

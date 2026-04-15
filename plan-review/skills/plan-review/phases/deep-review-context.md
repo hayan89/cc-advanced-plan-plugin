@@ -69,7 +69,10 @@ Score: {previous_score}
 PHASE: {Phase 번호}
 SCORE: {재평가된 총점}
 ISSUES:
-- [{CRITICAL|IMPORTANT|MINOR}] {설명} | Score: +{n} | Location: {ref} | Evidence: {evidence} | Fix: {fix} | Auto-fixable: {yes|no} | Status: {CONFIRMED|NEW}
+- [{CRITICAL|IMPORTANT|MINOR}] {설명} | Score: +{n} | Location: {ref} | Evidence: {evidence} | Status: {CONFIRMED|NEW}
+  FIX_CANDIDATES:
+    - [recommended] {설명} | Apply: {적용 텍스트/전략} | Trade-off: {영향}
+    - [alt] {설명} | Apply: {...} | Trade-off: {...}
 
 FALSE_POSITIVES:
 - Phase {N} Issue: {원래 이슈 설명} | Reason: {false positive인 이유}
@@ -85,6 +88,8 @@ FALSE_POSITIVES:
 - PHASE와 SCORE는 반드시 첫 두 줄에 위치
 - CONFIRMED 이슈만 SCORE에 반영 (FALSE_POSITIVE는 제외)
 - 새로 발견한 이슈는 Status: NEW로 표시
+- 각 CONFIRMED/NEW 이슈에 `FIX_CANDIDATES` 블록 필수 (최소 1개의 `[recommended]`)
+- 합리적 대안이 있을 때만 2개 이상 반환
 - FALSE_POSITIVES 섹션은 제거된 이슈가 없어도 항상 포함 (없으면 "none")
 ```
 
@@ -120,7 +125,10 @@ FALSE_POSITIVES:
 PHASE: {Phase 번호}
 SCORE: {검증 후 총점}
 ISSUES:
-- [{CRITICAL|IMPORTANT|MINOR}] {설명} | Score: +{n} | Location: {ref} | Evidence: {evidence} | Fix: {fix} | Auto-fixable: {yes|no} | Status: CONFIRMED
+- [{CRITICAL|IMPORTANT|MINOR}] {설명} | Score: +{n} | Location: {ref} | Evidence: {evidence} | Status: CONFIRMED
+  FIX_CANDIDATES:
+    - [recommended] {설명} | Apply: {적용 텍스트/전략} | Trade-off: {영향}
+    - [alt] {설명} | Apply: {...} | Trade-off: {...}
 
 FALSE_POSITIVES:
 - Phase {N} Issue: {원래 이슈 설명} | Reason: {false positive인 이유}
@@ -134,5 +142,6 @@ FALSE_POSITIVES:
 
 규칙:
 - CONFIRMED된 이슈만 SCORE에 반영
+- 각 CONFIRMED 이슈에 `FIX_CANDIDATES` 블록 필수 (기존 이슈에서 상속 가능)
 - FALSE_POSITIVES 섹션은 항상 포함 (없으면 "none")
 ```

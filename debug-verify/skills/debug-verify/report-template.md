@@ -10,6 +10,7 @@
 - Confidence: {HIGH|MEDIUM|LOW}
 - Loop Count: {N} / 3
 - Consensus: {AGREED|DISAGREED}
+- Selected Fix Direction: {선택된 후보 id 또는 'n/a' (verdict≠CONFIRMED 또는 후보 없음)}
 
 ### Verified Claims
 | # | Claim | Advocate | Challenger | Final |
@@ -30,7 +31,7 @@
 - {수동 확인 항목} | Reason: {이유}
 
 ### Recommended Action
-{판정별 안내 메시지}
+{판정별 안내 메시지 — CONFIRMED면 Selected Fix Direction을 본문에 통합}
 ```
 
 ## Multi-Loop Report (루프 2회 이상)
@@ -42,6 +43,7 @@
 - Loop Count: {N} / 3
 - Consensus: {AGREED|DISAGREED}
 - Loop History: Loop 1: {verdict} → Loop 2: {verdict} [→ Loop 3: {verdict}]
+- Selected Fix Direction: {선택된 후보 id 또는 'n/a'}
 
 ### Verified Claims
 | # | Claim | Loop 1 | Loop 2 | Loop 3 | Final |
@@ -75,17 +77,42 @@
 
 ## Recommended Action Templates
 
-### CONFIRMED:
+### CONFIRMED (후보 1개 또는 0개):
+```
+진단이 확인되었습니다.
+
+**확인된 원인:** {원인 요약}
+**증거:** {핵심 증거 1-2개}
+**수정 방향:** {FIX_CANDIDATES 단일 후보의 Apply 요약 — 후보 0개면 생략}
+
+다음 단계: 수정 계획을 `~/.claude/plans/`에 작성하세요.
+수정 계획에 다음을 포함하세요:
+1. 확인된 원인 (이 리포트 참조)
+2. 수정 방법 (위 '수정 방향' 참조)
+3. 영향 범위
+4. 테스트 계획
+
+수정 계획 작성 시 plan-review가 자동으로 검증합니다.
+```
+
+### CONFIRMED (후보 2개 이상 — 사용자가 방향 선택):
 ```
 진단이 확인되었습니다.
 
 **확인된 원인:** {원인 요약}
 **증거:** {핵심 증거 1-2개}
 
-다음 단계: 수정 계획을 `~/.claude/plans/`에 작성하세요.
+**사용자가 선택한 수정 방향:** {선택된 후보 설명}
+- **Apply:** {선택 후보의 Apply}
+- **Trade-off:** {선택 후보의 Trade-off}
+
+**검토된 다른 후보:**
+{선택되지 않은 후보 목록 — 선택 이유/제외 이유 간단히}
+
+다음 단계: 위 선택된 방향으로 수정 계획을 `~/.claude/plans/`에 작성하세요.
 수정 계획에 다음을 포함하세요:
 1. 확인된 원인 (이 리포트 참조)
-2. 수정 방법
+2. 선택된 수정 방향의 구체적 구현
 3. 영향 범위
 4. 테스트 계획
 

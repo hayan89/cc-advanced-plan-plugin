@@ -94,21 +94,52 @@ Challenger 결과를 수집합니다.
 ### Step 5: Loop Decision
 
 **CONFIRMED 또는 REFUTED:**
-→ Step 6으로 이동 (최종 리포트 출력)
+→ Step 5.5로 이동 (수정 방향 선택)
 
 **INCONCLUSIVE:**
 1. 현재 loop_count 확인
 2. loop_count < 3 AND 교착 상태 아님 → Step 2로 재루프
    - Advocate에게 이전 라운드 결과 + INCONCLUSIVE claim + Challenger의 MISSED_EVIDENCE 전달
    - Challenger에게 이전 ALTERNATIVE_HYPOTHESES + 새 Advocate 결과 전달
-3. loop_count >= 3 OR 교착 상태 → Step 6으로 이동 (사용자 위임)
+3. loop_count >= 3 OR 교착 상태 → Step 5.5로 이동 (사용자 위임)
+
+### Step 5.5: Fix Direction Selection
+
+**삽입 위치:** Step 5에서 verdict가 확정되어 Step 6으로 진행하기 직전. 재루프 경로에서는 실행하지 않음.
+
+**실행 조건:**
+- `verdict == CONFIRMED` AND `len(FIX_CANDIDATES) ≥ 2` → AskUserQuestion 실행 (아래)
+- `verdict == CONFIRMED` AND `len(FIX_CANDIDATES) == 1` → 단일 후보를 그대로 `selected_fix_direction`에 저장, AskUserQuestion 생략
+- `verdict == CONFIRMED` AND `len(FIX_CANDIDATES) == 0` → `selected_fix_direction = "n/a"`, Step 6에서 "후보 없음" 템플릿 사용
+- `verdict == REFUTED` OR `INCONCLUSIVE` → `selected_fix_direction = "n/a"`, 바로 Step 6으로
+
+**AskUserQuestion 호출 방식 (후보 ≥ 2):**
+- `multiSelect: false`
+- 질문: `"진단이 확정되었습니다. 어떤 수정 방향으로 진행할까요?"`
+- 옵션 (최대 4개, 마지막 슬롯은 항상 "모두 건너뛰기"):
+  1. `[recommended]` 후보 → label `"{후보 설명} (Recommended)"`, description에 Apply + Trade-off 요약
+  2. `[alt]` 후보들 → label `"{후보 설명}"`, description에 Apply + Trade-off 요약
+  3. "모두 건너뛰기" → 사용자가 직접 수정 계획을 작성
+- 후보 5개 이상이면 `[recommended]` 우선 + 원 순서로 상위 3개 + "모두 건너뛰기". 절단된 후보는 질문 description에 `"[alt] 외 N건 생략"` 명시.
+
+**결과 저장:**
+- 선택된 후보를 `selected_fix_direction` 변수에 보관 (Step 6에서 report-template의 "Selected Fix Direction" 필드에 주입).
+- Step 7 세션 상태 기록 시 `claims_summary` 내 해당 claim 엔트리에 `selected_fix` 필드로 함께 저장.
+
+**loop_count 상호작용:** Step 5.5는 CONFIRMED/REFUTED/INCONCLUSIVE 확정 후에만 실행되므로 `loop_count` 증가에 영향 없음.
 
 ### Step 6: Final Report
 
 `skills/debug-verify/report-template.md`를 Read로 읽고, 해당 템플릿에 따라 최종 리포트를 출력하세요.
 
 루프가 1회였으면 Single Loop Report, 2회 이상이었으면 Multi-Loop Report 사용.
-판정에 따른 Recommended Action Template을 적용.
+판정에 따른 Recommended Action Template을 적용:
+- **CONFIRMED + 후보 ≤ 1 (또는 n/a):** "CONFIRMED (후보 1개 또는 0개)" 템플릿
+- **CONFIRMED + 사용자 선택 완료 (후보 ≥ 2):** "CONFIRMED (후보 2개 이상 — 사용자가 방향 선택)" 템플릿. `selected_fix_direction`을 본문 "사용자가 선택한 수정 방향" 섹션에 주입.
+- **REFUTED:** REFUTED 템플릿
+- **INCONCLUSIVE:** INCONCLUSIVE 템플릿
+
+리포트 상단 메타데이터의 "Selected Fix Direction" 필드에 Step 5.5 결과 반영.
 
 ### Step 7: Update Session State
 
@@ -127,7 +158,7 @@ cat > ~/.claude/plugins/data/debug-verify/sessions/{sessionId}.json << 'EOF'
   "loop_count": <이번 세션의 총 루프 횟수>,
   "plan_path": "<검증한 플랜 파일 경로>",
   "last_verified_at": "<ISO 8601 타임스탬프>",
-  "claims_summary": [<각 claim의 {claim, verdict} 요약>]
+  "claims_summary": [<각 claim의 {claim, verdict, selected_fix?} 요약 — selected_fix는 Step 5.5에서 선택된 후보 또는 "n/a">]
 }
 EOF
 ```

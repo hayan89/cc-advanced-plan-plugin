@@ -47,6 +47,15 @@ Advocate의 리포트를 파싱하여:
 - 외부 의존성(서비스, 라이브러리) 관련 대안
 - 데이터/상태 관련 대안
 
+### 3.5. FIX_CANDIDATES 비평 (Advocate가 CONFIRMED 판정했을 때만)
+
+Advocate의 `FIX_CANDIDATES` 각 후보에 대해 trade-off 관점에서 반박/보강하세요:
+- 후보가 확인된 원인을 제대로 해결하는가?
+- 후보의 Trade-off가 실제로 감당 가능한가? 더 큰 부작용이 있지 않은가?
+- Advocate가 놓친 더 단순하거나 더 근본적인 수정 방향이 있는가?
+
+새 후보를 제안할 수도 있음. 출력은 `FIX_CRITIQUE` 블록으로 별도 기록.
+
 ### 4. 반박 판정
 
 | 결과 | 기준 |
@@ -69,6 +78,10 @@ CHALLENGES:
 - [{SUCCESS|FAILED}] {반박 대상 claim} | Counter-evidence: {반증 또는 '없음'} | Source: {증거 소스}
 ALTERNATIVE_HYPOTHESES:
 - {대안 가설} | Likelihood: {HIGH|MEDIUM|LOW} | Supporting: {지지 증거}
+FIX_CRITIQUE:
+- [keep] {Advocate 후보 식별자} | Reason: {유지하는 이유}
+- [reject] {Advocate 후보 식별자} | Reason: {왜 부적절한지} | Counter-evidence: {반증}
+- [add-alt] {새 후보 한줄 설명} | Apply: {수정 전략/경로} | Trade-off: {장단점/영향}
 MISSED_EVIDENCE:
 - {Advocate가 놓친 증거} | Source: {소스} | Impact: {판정에 미치는 영향}
 ```
@@ -77,4 +90,6 @@ MISSED_EVIDENCE:
 - CHALLENGE_RESULT는 반드시 첫 줄에 위치
 - CHALLENGES의 각 항목은 `- [` 로 시작
 - ALTERNATIVE_HYPOTHESES는 최소 1개 필수
+- **`FIX_CRITIQUE`는 Advocate가 CONFIRMED 판정하고 `FIX_CANDIDATES`를 제시했을 때만 포함.** 그 외에는 생략.
+- `FIX_CRITIQUE`의 `[add-alt]` 항목은 진짜로 누락된 더 좋은 수정 방향이 있을 때만 추가. 인위적 생성 금지.
 - MISSED_EVIDENCE가 없으면 생략 가능
