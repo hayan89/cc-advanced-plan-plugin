@@ -17,7 +17,7 @@
 **하위호환 파싱 (구 포맷 폴백):**
 - 이슈 라인에 `| Fix: {...} | Auto-fixable: {yes|no}` 단일 필드가 있으면 길이 1짜리 `FIX_CANDIDATES`로 자동 변환:
   - `[recommended] (legacy) | Apply: {Fix 원문} | Trade-off: (unknown)` 으로 변환
-  - `Auto-fixable: yes`는 무시 (이제 Score로만 판정)
+  - `Auto-fixable` 필드는 무시. 변환된 단일 후보도 Step 5의 단일-후보 승인 게이트로 진입한다 (자동 적용 없음).
 - 신 포맷과 구 포맷이 동시에 존재하면 `FIX_CANDIDATES` 블록 우선.
 
 에이전트가 표준 출력 포맷을 따르지 않은 경우:
@@ -50,35 +50,25 @@
 | 총점 | 판정 | 동작 |
 |------|------|------|
 | ≤ 24 | **PASS** | "플랜 검토 완료. 큰 문제 없음." 보고 후 종료 |
-| 25~60 | **NEEDS_REVISION** | Auto-fix + 승인 게이트 (아래 참조) |
+| 25~60 | **NEEDS_REVISION** | 사용자 선택 게이트 (아래 참조) |
 | > 60 | **MAJOR_ISSUES** | 전체 이슈 나열, Critical은 사용자 확인 필수 |
 
 ## Step 5: Apply Fixes (NEEDS_REVISION / MAJOR_ISSUES)
 
-각 이슈마다 `len(FIX_CANDIDATES)` 값과 Score에 따라 3-way 분기:
+각 이슈마다 `len(FIX_CANDIDATES)` 값에 따라 2-way 분기 (Score 무관):
 
-### Case A: 단일 후보 + Score ≤ 5 (auto-fix)
-- 후보의 `Apply` 텍스트를 플랜 파일에 직접 적용
-- before/after diff를 표시:
-  ```
-  Fix #N: {한줄 설명}
-  Before: {플랜 원문}
-  After: {수정된 텍스트}
-  Applied candidate: [recommended] {후보 설명}
-  ```
-
-### Case B: 단일 후보 + Score > 5 (승인 게이트)
+### Case B: 단일 후보 (severity/Score 무관, 승인 게이트)
 - AskUserQuestion(multiSelect: false)으로 사용자에게 제시:
   ```
   Issue #N: {설명}
-  Severity: {CRITICAL|IMPORTANT}
+  Severity: {CRITICAL|IMPORTANT|MINOR}
   Current plan says: {플랜 인용}
   Suggested change: {후보의 Apply}
   Trade-off: {후보의 Trade-off}
-  Rationale: {사용자 판단이 필요한 이유}
   ```
 - 옵션: `["적용 (Recommended)", "적용 안 함"]`
-- 사용자 승인 후 적용.
+- 사용자가 "적용" 선택 시 플랜 파일에 반영. "적용 안 함" 선택 시 미수정 — 보고서의 "Skipped by User" 섹션에 나열.
+- **하위호환 폴백 후보(`(legacy)` 마커)도 동일 경로로 진입**한다. `Auto-fixable: yes`는 더 이상 자동 적용을 의미하지 않는다.
 
 ### Case C: 후보 2개 이상 (severity 무관, 항상 AskUserQuestion)
 - AskUserQuestion(multiSelect: false)으로 후보 중 하나를 선택하게 함:
@@ -94,7 +84,7 @@
 ### 수정 제안 없음 (후보 0개):
 - 자동 적용 금지. 보고서에 `Pending (no fix proposed)` 섹션으로 별도 나열하여 사용자 판단 유도.
 
-**Multi-Iteration / Deep Review 경로에도 동일 3-way 분기 적용.** Deep Review 최종 집계 후 Step 5를 실행할 때도 `len(FIX_CANDIDATES)` 기반 분기가 일관되게 동작.
+**Multi-Iteration / Deep Review 경로에도 동일 2-way 분기 적용.** Deep Review 최종 집계 후 Step 5를 실행할 때도 `len(FIX_CANDIDATES)` 기반 분기가 일관되게 동작.
 
 ## Final Output Format
 
@@ -103,26 +93,22 @@
 - Total Score: {score}/120
 - Verdict: {PASS|NEEDS_REVISION|MAJOR_ISSUES}
 - Strategy Used: {Sequential|Subagent 2x|Subagent 4x|Team mode}
-- Auto-fixed: {count} items
-- User-selected fixes: {count} items
-- Requires approval: {count} items
+- User-approved fixes (single): {count} items
+- User-selected fixes (multi): {count} items
 - Skipped by user: {count} items
 - Pending (no fix proposed): {count} items
 
 ### Issues (by severity)
 {집계된 이슈 목록 — severity 순}
 
-### Auto-Applied Fixes
-{적용된 자동 수정 diff}
+### User-Approved Fixes (Single Candidate)
+{단일 후보 이슈에서 사용자가 "적용"을 선택한 수정 내용과 diff}
 
-### User-Selected Fixes
+### User-Selected Fixes (Multi Candidate)
 {사용자가 다중 후보 중 선택한 수정 내용과 diff}
 
-### Pending Approval
-{사용자 승인 대기 항목}
-
 ### Skipped by User
-{사용자가 "모두 건너뛰기" 선택한 이슈 — 미수정 상태로 보고서에 남김}
+{사용자가 "적용 안 함" 또는 "모두 건너뛰기" 선택한 이슈 — 미수정 상태로 보고서에 남김}
 ```
 
 ## Multi-Iteration Aggregation Rules
@@ -175,9 +161,8 @@ Iterative Deep Re-Review가 실행된 경우 아래 확장 형식을 사용:
 - Review Depth: {N} passes (initial + {N-1} deep re-review)
 - Score Progression: Pass 1: {s1} → Pass 2: {s2} [→ Pass 3: {s3}]
 - Issues Confirmed: {count} | False Positives Removed: {count} | New Issues Found: {count}
-- Auto-fixed: {count} items
-- User-selected fixes: {count} items
-- Requires approval: {count} items
+- User-approved fixes (single): {count} items
+- User-selected fixes (multi): {count} items
 - Skipped by user: {count} items
 - Pending (no fix proposed): {count} items
 
@@ -198,17 +183,14 @@ Iterative Deep Re-Review가 실행된 경우 아래 확장 형식을 사용:
 ### False Positives Removed
 {제거된 이슈 + 이유 목록}
 
-### Auto-Applied Fixes
-{적용된 자동 수정 diff}
+### User-Approved Fixes (Single Candidate)
+{단일 후보 이슈에서 사용자가 "적용"을 선택한 수정 내용과 diff}
 
-### User-Selected Fixes
+### User-Selected Fixes (Multi Candidate)
 {사용자가 다중 후보 중 선택한 수정 내용과 diff}
 
-### Pending Approval
-{사용자 승인 대기 항목}
-
 ### Skipped by User
-{사용자가 "모두 건너뛰기" 선택한 이슈}
+{사용자가 "적용 안 함" 또는 "모두 건너뛰기" 선택한 이슈}
 ```
 
 Deep Re-Review가 실행되지 않은 경우 (진입 조건 미충족), 기존 Final Output Format을 그대로 사용.

@@ -10,7 +10,7 @@
 - Confidence: {HIGH|MEDIUM|LOW}
 - Loop Count: {N} / 3
 - Consensus: {AGREED|DISAGREED}
-- Selected Fix Direction: {선택된 후보 id 또는 'n/a' (verdict≠CONFIRMED 또는 후보 없음)}
+- Selected Fix Direction: {선택된 후보 id | 'skipped' (사용자가 적용 안 함/모두 건너뛰기 선택) | 'n/a' (verdict≠CONFIRMED 또는 후보 없음)}
 
 ### Verified Claims
 | # | Claim | Advocate | Challenger | Final |
@@ -43,7 +43,7 @@
 - Loop Count: {N} / 3
 - Consensus: {AGREED|DISAGREED}
 - Loop History: Loop 1: {verdict} → Loop 2: {verdict} [→ Loop 3: {verdict}]
-- Selected Fix Direction: {선택된 후보 id 또는 'n/a'}
+- Selected Fix Direction: {선택된 후보 id | 'skipped' | 'n/a'}
 
 ### Verified Claims
 | # | Claim | Loop 1 | Loop 2 | Loop 3 | Final |
@@ -113,6 +113,28 @@
 수정 계획에 다음을 포함하세요:
 1. 확인된 원인 (이 리포트 참조)
 2. 선택된 수정 방향의 구체적 구현
+3. 영향 범위
+4. 테스트 계획
+
+수정 계획 작성 시 plan-review가 자동으로 검증합니다.
+```
+
+### CONFIRMED (사용자가 모두 건너뛰기):
+```
+진단이 확인되었습니다.
+
+**확인된 원인:** {원인 요약}
+**증거:** {핵심 증거 1-2개}
+
+**사용자가 선택한 수정 방향:** (skip) — 사용자가 직접 수정 계획 작성 필요
+
+**검토된 후보:**
+{모든 후보 목록 — 각 후보의 Apply 요약 + Trade-off}
+
+다음 단계: 위 검토된 후보를 참고하거나 직접 새 수정 방향을 결정하여 `~/.claude/plans/`에 수정 계획을 작성하세요.
+수정 계획에 다음을 포함하세요:
+1. 확인된 원인 (이 리포트 참조)
+2. 직접 결정한 수정 방향 (또는 검토된 후보 중 재선택)
 3. 영향 범위
 4. 테스트 계획
 
