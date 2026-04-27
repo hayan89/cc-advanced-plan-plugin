@@ -1,7 +1,7 @@
 {
   "name": "debug-verify",
-  "description": "Debug verification plugin — validates debugging hypotheses against real data using Advocate + Challenger dual-agent Kapasi Loop. Auto-triggers on debug plan detection, integrates with plan-review for fix plan validation. v1.1 adds Pre-Advocate Classifier (Step 1.5) and Tool Coverage Audit that force tool calls for data-bound claims.",
-  "version": "1.1.0",
+  "description": "Debug verification plugin — validates debugging hypotheses against real data using Advocate + Challenger dual-agent Kapasi Loop. Auto-triggers on debug plan detection, integrates with plan-review for fix plan validation. v1.1 adds Pre-Advocate Classifier (Step 1.5) and Tool Coverage Audit. v1.1.1 generalizes tool categories so MCP and Bash CLI (sqlcmd/psql/curl/etc.) are equivalent fallbacks within each category.",
+  "version": "1.1.1",
   "author": { "name": "hyunseung" },
   "license": "MIT",
   "keywords": ["debug", "verify", "kapasi", "loop", "hypothesis", "advocate", "challenger", "claude-code"]

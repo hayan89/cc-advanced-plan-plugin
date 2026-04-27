@@ -17,13 +17,13 @@
     },
     {
       "name": "debug-verify",
-      "description": "Debug verification plugin — validates debugging hypotheses against real data using Advocate + Challenger dual-agent Kapasi Loop. v1.1 adds Pre-Advocate Classifier and Tool Coverage Audit that force tool calls for data-bound claims.",
-      "version": "1.1.0",
+      "description": "Debug verification plugin — validates debugging hypotheses against real data using Advocate + Challenger dual-agent Kapasi Loop. v1.1 adds Pre-Advocate Classifier and Tool Coverage Audit. v1.1.1 generalizes tool categories so MCP and Bash CLI are equivalent fallbacks within each category.",
+      "version": "1.1.1",
       "author": {
         "name": "hyunseung"
       },
       "source": "./debug-verify"
     }
   ],
-  "version": "3.1.0"
+  "version": "3.1.1"
 }

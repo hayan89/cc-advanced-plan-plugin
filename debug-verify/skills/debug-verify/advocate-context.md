@@ -23,22 +23,24 @@
 
 ### 2. 증거 수집
 
-각 claim에 대해 적절한 도구를 선택하여 증거를 수집하세요:
+각 claim에 대해 적절한 도구를 선택하여 증거를 수집하세요. **MCP 도구·CLI·Bash 명령은 같은 카테고리 안에서 등가의 fallback**이며, 환경에 가용한 어떤 도구로 검증해도 무관합니다.
 
-| 검증 대상 | 우선 사용 도구 | 대안 도구 |
-|-----------|---------------|-----------|
-| 코드 로직/구조 | Grep, Read, Glob | — |
-| 로그 패턴 | Grafana Loki (mcp__grafana__query_loki_logs) | Read (로컬 로그 파일) |
-| 메트릭/성능 | Grafana Prometheus (mcp__grafana__query_prometheus) | — |
-| 프로파일링 | Grafana Pyroscope (mcp__grafana__query_pyroscope) | — |
-| DB 상태 | 가용한 DB 도구 (D1, SQL 등) | — |
-| 대시보드 | Grafana (mcp__grafana__search_dashboards) | — |
-| 에러 패턴 | Grafana Sift (mcp__grafana__find_error_pattern_logs) | Grep |
+| 검증 대상 | 우선 사용 도구 | CLI / Bash 대안 |
+|-----------|---------------|----------------|
+| 코드 로직/구조 | Grep, Read, Glob | `ripgrep` / `ag` |
+| 로그 패턴 | `mcp__grafana__query_loki_logs` | 로컬 파일 Read+Grep, Bash: `tail` / `awk` / `journalctl` |
+| 메트릭/성능 | `mcp__grafana__query_prometheus` | Bash: `curl`로 Prometheus HTTP API, `promtool query`, export된 CSV Read |
+| 프로파일링 | `mcp__grafana__query_pyroscope` | Bash: `perf` / `pprof` CLI, flame graph dump 파일 Read |
+| DB 상태 | DB MCP (D1 등) | Bash CLI: `sqlcmd` / `psql` / `mysql` / `sqlite3` / `mongosh` 등 |
+| 대시보드 | `mcp__grafana__search_dashboards` / `get_dashboard_by_uid` | dashboard JSON 파일 Read, Bash `curl`로 Grafana HTTP API |
+| 에러 패턴 | `mcp__grafana__find_error_pattern_logs` | Grep, Bash `grep` / `awk` |
+| 외부 API | WebFetch | Bash: `curl` / `wget`, 명시된 SDK CLI |
 
 **도구 사용 규칙:**
-- MCP 도구가 사용 가능하면 우선 사용
-- 사용 불가능한 도구는 시도하지 말고, 수동 확인 항목으로 기록
-- 각 증거에 출처(도구명 + 쿼리/경로)를 반드시 기록
+- 카테고리 안의 어느 도구든 가용하면 사용. **MCP 우선이지만 미가용 시 CLI fallback이 동등하게 유효한 증거**로 인정.
+- CLI 사용 시 Bash로 호출. 명령은 read-only로 한정 (예: `psql -c 'SELECT ...'`, `curl -s http://prom/api/v1/query?...`).
+- 모든 후보가 미가용이면 시도하지 말고 `MANUAL_CHECKS:`에 기록 + claim INCONCLUSIVE.
+- 각 증거에 출처를 반드시 기록 — MCP 호출은 도구명, CLI 호출은 명령 요약 (예: `Bash(psql -c ...)`).
 
 ### 3. Claim별 판정
 
@@ -112,6 +114,10 @@ MANUAL_CHECKS:
 - CLAIMS의 각 항목은 `- [` 로 시작
 - Evidence 없는 claim 판정은 무효 (INCONCLUSIVE로 처리)
 - `EVIDENCE_TOOLS_USED`는 각 Claim ID별로 실제 호출한 도구 이름을 나열. 호출 안 했으면 `none`. CLAIMS 블록과 1:1 대응 필수.
+  - **MCP 호출:** 도구명을 그대로 (예: `mcp__grafana__query_prometheus`).
+  - **CLI/Bash 호출:** `Bash(<명령 요약>)` 형식 (예: `Bash(psql -c "SELECT ...")`, `Bash(curl http://prom/api/v1/query?...)`). 명령 요약은 1줄, 민감 정보(자격증명·토큰)는 마스킹.
+  - **로컬 도구:** `Grep` / `Read` / `Glob` 그대로.
+  - 같은 claim에 여러 도구를 사용했으면 쉼표로 join (예: `mcp__grafana__query_prometheus, Bash(curl ...)`).
 - **`FIX_CANDIDATES`는 VERDICT == CONFIRMED일 때만 필수.** REFUTED/INCONCLUSIVE면 생략.
 - CONFIRMED인데 수정 방향이 명확치 않아 후보를 제시할 수 없으면 `FIX_CANDIDATES: none`으로 명시.
 - 후보는 합리적 대안이 있을 때만 2개 이상. 인위적 생성 금지. 단일 후보여도 `[recommended]` 마커 필수.
