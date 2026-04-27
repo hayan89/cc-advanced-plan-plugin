@@ -29,9 +29,9 @@ LOW confidence 항목은 부정확한 위임을 방지하기 위해 제외하고
 
 HIGH/MEDIUM 추출 결과가 0개면 phase 스킵. SCORE 0, ISSUES: none. EXTRACTED_CLAIMS는 빈 목록으로 출력.
 
-### 6.3 임시 디버깅 플랜 구성
+### 6.3 임시 디버깅 플랜 구성 (메모리 내)
 
-추출된 claim 목록을 다음 형식의 메모리 내 텍스트로 조립합니다 (파일 저장 X — 메모리 내 변수로만 보유).
+추출된 claim 목록을 다음 형식의 **plan_text** 문자열로 조립합니다 (디스크에 저장하지 않음 — 메모리 내 변수로만 보유):
 
 ```
 # Verification Targets (auto-generated from {원본 플랜 경로})
@@ -42,18 +42,34 @@ HIGH/MEDIUM 추출 결과가 0개면 phase 스킵. SCORE 0, ISSUES: none. EXTRAC
 ...
 ```
 
-### 6.4 debug-verify Skill 호출
+### 6.4 debug-verify Skill 호출 (인라인 args envelope)
 
-Skill tool로 `debug-verify:debug-verify`를 호출합니다. 입력은 6.3에서 조립한 임시 디버깅 플랜 텍스트이며, 그 상단에 Plan Mode Context 헤더(아래)를 삽입해 read-only 시그널을 전파합니다.
+Skill tool로 `debug-verify:debug-verify`를 호출하면서 다음 형태의 **JSON envelope**을 `args` 인자로 인라인 전달합니다. 디스크 임시 파일을 사용하지 않습니다.
 
+```json
+{
+  "from": "plan-review:phase-6",
+  "source_plan_path": "{원본 플랜 절대 경로}",
+  "sub_session_id": "phase6-{원본 sessionId}-{ISO 8601 타임스탬프}",
+  "plan_mode_context": {
+    "plan_mode": true,
+    "allowed_tools": "read-only only",
+    "forbidden_tools": ["Edit", "Write", "Bash(write/network)", "git commit", "recursive Skill"]
+  },
+  "plan_text": "{6.3에서 조립한 임시 디버깅 플랜 전문}"
+}
 ```
-== Plan Mode Context ==
-plan_mode: true
-allowed_tools: read-only only
-forbidden_tools: Edit, Write, Bash(write/network), git commit, recursive Skill
-```
 
-> **참고:** plan mode가 아닌 경우에도 위 헤더의 `plan_mode: false`를 전달합니다. debug-verify는 헤더 유무에 관계없이 동일하게 해석합니다.
+규칙:
+
+- `plan_mode_context.plan_mode`는 호출자가 plan mode인지 여부에 따라 `true`/`false`로 결정. plan mode가 아니면 `forbidden_tools`도 `[]`로 비워서 보냅니다 (Edit/Write 등 정상 사용 가능).
+- `sub_session_id`는 plan-review의 현재 sessionId에 `phase6-` 접두사를 붙여 충돌 회피.
+- `plan_text`는 6.3 결과만 담습니다. **자체적으로 `== Plan Mode Context ==` 헤더를 본문에 끼워 넣지 마세요** — 헤더는 envelope의 `plan_mode_context` 필드로만 전달됩니다.
+- envelope 키가 빠지거나 JSON 파싱이 실패하면 debug-verify는 디스크 fallback(`~/.claude/plans/*.md` 가장 최근 파일)으로 빠집니다. Phase 6 호출자는 그 결과를 ERROR로 간주하고 6.6 에러 복구 절차를 적용합니다.
+
+### 6.4.1 재귀 차단
+
+debug-verify Skill이 다시 plan-review를 호출하지 못하도록 envelope의 `forbidden_tools`에 `"recursive Skill"`을 항상 포함합니다. 또한 plan-review가 직전에 Phase 6을 트리거했음을 알리기 위해 `from` 필드를 검사하여 `plan-review:phase-6`이면 nested Phase 6 진입을 스킵합니다 (Phase 6 자기 참조 방지 — debug-verify의 추후 후처리에서 재호출 시 `from`이 같으면 차단).
 
 ### 6.5 결과 매핑
 
@@ -89,6 +105,7 @@ ISSUES:
 EXTRACTED_CLAIMS:
 - [{카테고리}] {claim 원문} | confidence: {HIGH|MEDIUM} | source_line: {N}
 DELEGATED_VERDICT: {CONFIRMED|REFUTED|INCONCLUSIVE|ERROR}
+SOURCE_PLAN_PATH: {원본 플랜 절대 경로 — envelope에 보낸 값}
 SUB_SESSION_ID: {debug-verify 세션 ID 또는 'n/a'}
 MANUAL_CHECKS:
 - {LOW confidence claim 또는 차단 사유}
@@ -100,5 +117,6 @@ MANUAL_CHECKS:
 - ISSUES가 없으면 `ISSUES: none` 한 줄로 표기
 - EXTRACTED_CLAIMS가 비어있으면 `EXTRACTED_CLAIMS: none` 표기
 - DELEGATED_VERDICT는 항상 출력 (스킵 시 `n/a`)
-- SUB_SESSION_ID는 호출 성공 시 debug-verify 세션 ID, 실패/스킵 시 `n/a`
+- SOURCE_PLAN_PATH는 envelope `source_plan_path`와 동일하게 기록 — 보고서가 원본 플랜을 역추적하기 위함
+- SUB_SESSION_ID는 호출 성공 시 envelope `sub_session_id` 그대로, 실패/스킵 시 `n/a`
 - MANUAL_CHECKS가 없으면 생략 가능

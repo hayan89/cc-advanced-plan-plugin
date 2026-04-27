@@ -73,22 +73,67 @@ Step 2 (Verdict Consensus) 이전에 수행한다.
 | 6 | Unavailable Tool Handling — UNAVAILABLE_TOOLS 등재 claim도 INCONCLUSIVE + MANUAL_CHECKS 명시 | Advocate |
 | 7 | Plan Mode Enforcement — `plan_mode: true`면 forbidden_tools 호출 금지 | Advocate, Challenger |
 
-### 3. Plan Mode 시그널 메커니즘
+### 3. 인라인 args envelope 인터페이스
 
-#### 시그널 전파
+Phase 6 → debug-verify 호출 시 디스크 임시 파일을 사용하지 않고 Skill tool args에 JSON envelope을 인라인 전달한다.
 
-Phase 6의 6.4 단계에서 임시 디버깅 플랜 본문 상단에 다음 헤더를 삽입한다:
+#### Envelope 스키마
+
+```json
+{
+  "from": "plan-review:phase-6",
+  "source_plan_path": "{원본 플랜 절대 경로}",
+  "sub_session_id": "phase6-{원본 sessionId}-{ISO 8601}",
+  "plan_mode_context": {
+    "plan_mode": true,
+    "allowed_tools": "read-only only",
+    "forbidden_tools": ["Edit", "Write", "Bash(write/network)", "git commit", "recursive Skill"]
+  },
+  "plan_text": "{6.3에서 조립한 임시 디버깅 플랜 전문}"
+}
+```
+
+| 필드 | 의미 | 결정 |
+|------|------|------|
+| `from` | 호출자 식별자 | 항상 `plan-review:phase-6`. debug-verify Step 1.3 재귀 가드에 사용. |
+| `source_plan_path` | 원본 플랜 절대 경로 | Phase 6 출력의 SOURCE_PLAN_PATH 필드와 일치. 보고서 역추적용. |
+| `sub_session_id` | 격리된 세션 ID | `phase6-{plan-review sessionId}-{타임스탬프}`. debug-verify 세션 상태 파일 키. |
+| `plan_mode_context` | plan mode 시그널 | plan mode면 `plan_mode: true` + forbidden_tools 채움. 일반 모드면 `plan_mode: false` + `forbidden_tools: []`. |
+| `plan_text` | 디버깅 플랜 본문 | 6.3 결과만. 자체적으로 헤더 삽입 금지. |
+
+#### debug-verify Step 1 호출 모드 판정
+
+debug-verify Step 1은 다음 우선순위로 입력 소스를 결정:
+
+1. **envelope 모드 (최우선):** Skill args에 JSON envelope 파싱 성공 + `plan_text` 비어있지 않음 → envelope 사용.
+2. **훅 모드:** PostToolUse 훅이 전달한 경로의 파일 Read.
+3. **디스크 fallback:** 가장 최근 수정된 `~/.claude/plans/*.md` 중 디버깅 키워드 포함 파일.
+
+envelope 모드와 디스크 모드 모두에서 이후 단계 입력은 동일한 "플랜 본문 텍스트"로 통일.
+
+#### Plan Mode Context 직렬화
+
+debug-verify Step 1.2가 envelope의 `plan_mode_context` 객체를 다음 형식으로 직렬화하여 Step 2/3 prompt의 `{plan_mode_context}` placeholder에 주입:
 
 ```
 == Plan Mode Context ==
 plan_mode: {true|false}
-allowed_tools: read-only only
-forbidden_tools: Edit, Write, Bash(write/network), git commit, recursive Skill
+allowed_tools: {문자열}
+forbidden_tools: {배열을 쉼표로 join}
 ```
 
-#### 시행
+Advocate / Challenger의 Calibration Rule 7번이 이 헤더를 보고 forbidden_tools 호출 시 해당 claim을 INCONCLUSIVE로 처리한다.
 
-debug-verify SKILL.md Step 2 / Step 3 프롬프트 템플릿에 `{plan_mode_context}` placeholder를 추가하여 헤더를 그대로 주입. Advocate / Challenger의 Calibration Rule 7번에 따라 forbidden_tools 호출 시 해당 claim을 INCONCLUSIVE 처리.
+#### 재귀 차단
+
+- envelope `forbidden_tools`에 항상 `"recursive Skill"` 포함.
+- debug-verify Step 1.3이 envelope `from` 필드를 검사하여 `plan-review:phase-6`이면 plan-review 재호출을 차단.
+- Calibration Rule 7번이 backstop 역할.
+
+#### 에러 복구
+
+- envelope 파싱 실패 → debug-verify는 디스크 fallback으로 빠짐. Phase 6 호출자는 결과를 ERROR로 간주하고 6.6 절차 적용 (SCORE 5 + ISSUE 1건).
+- `plan_text` 필드 누락 → envelope 모드 진입 자체 실패 → 동일.
 
 #### 양쪽 SKILL.md "Important Rules" 추가
 
