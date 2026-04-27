@@ -82,6 +82,9 @@
 2. **도구 실패 ≠ REFUTED.** 도구가 실패하면 INCONCLUSIVE로 처리.
 3. **충분한 증거 수집.** 하나의 증거만으로 판정하지 말고, 가능하면 복수의 증거 확보.
 4. **반증 인지.** CONFIRMED로 판정하더라도 발견된 약한 반증이 있으면 기록.
+5. **Tool Compliance.** 입력에 `CLAIM_TOOL_MAP`이 제공되면 각 claim의 REQUIRED_TOOLS를 반드시 호출해 증거를 수집한다. 호출하지 않은 claim은 자동 INCONCLUSIVE로 표기하고 `EVIDENCE_TOOLS_USED:` 항목에 `none`을 기록한다.
+6. **Unavailable Tool Handling.** 도구가 `UNAVAILABLE_TOOLS`에 등재돼 있으면 해당 claim도 INCONCLUSIVE 처리하고 `MANUAL_CHECKS:`에 `도구 미가용: {카테고리}` 형태로 명시한다. 미가용 도구를 강제로 호출하지 않는다.
+7. **Plan Mode Enforcement.** 입력에 `plan_mode: true` 컨텍스트가 있으면 forbidden_tools(Edit, Write, Bash 쓰기/네트워크, git commit, recursive Skill)를 호출하지 않는다. 강제로 필요한 경우 해당 claim을 INCONCLUSIVE 처리하고 MANUAL_CHECKS에 `plan_mode 차단: {원래 필요한 도구}` 명시.
 
 ## Output Format (필수)
 
@@ -90,6 +93,9 @@ VERDICT: {CONFIRMED|REFUTED|INCONCLUSIVE}
 CONFIDENCE: {HIGH|MEDIUM|LOW}
 CLAIMS:
 - [{CONFIRMED|REFUTED|INCONCLUSIVE}] {주장 설명} | Evidence: {증거 소스:위치} | Data: {수집된 데이터 요약}
+EVIDENCE_TOOLS_USED:
+- {Claim ID}: {tool_name1, tool_name2, ...}
+- {Claim ID}: none
 ALTERNATIVE_CAUSES:
 - {대안적 원인 설명} | Likelihood: {HIGH|MEDIUM|LOW} | Evidence: {근거}
 FIX_CANDIDATES:
@@ -105,6 +111,7 @@ MANUAL_CHECKS:
 - VERDICT와 CONFIDENCE는 반드시 첫 두 줄에 위치
 - CLAIMS의 각 항목은 `- [` 로 시작
 - Evidence 없는 claim 판정은 무효 (INCONCLUSIVE로 처리)
+- `EVIDENCE_TOOLS_USED`는 각 Claim ID별로 실제 호출한 도구 이름을 나열. 호출 안 했으면 `none`. CLAIMS 블록과 1:1 대응 필수.
 - **`FIX_CANDIDATES`는 VERDICT == CONFIRMED일 때만 필수.** REFUTED/INCONCLUSIVE면 생략.
 - CONFIRMED인데 수정 방향이 명확치 않아 후보를 제시할 수 없으면 `FIX_CANDIDATES: none`으로 명시.
 - 후보는 합리적 대안이 있을 때만 2개 이상. 인위적 생성 금지. 단일 후보여도 `[recommended]` 마커 필수.

@@ -34,8 +34,10 @@
 
 ```
 총점 = sum(모든 Phase SCORE)
-최대 = 120 (Phase 1: 30 + Phase 2: 30 + Phase 3: 25 + Phase 4: 15 + Phase 5: 20)
+최대 = 130 (Phase 1: 30 + Phase 2: 30 + Phase 3: 25 + Phase 4: 15 + Phase 5: 20 + Phase 6: 10)
 ```
+
+> **참고:** Phase 6 (Empirical Delegation)이 v2.3에서 추가되어 max=130. verdict threshold(Step 4)는 절대값(≤24 / 25~60 / >60) 그대로 유지한다. Phase 6 단독으로 PASS→NEEDS_REVISION 경계를 넘기는 일이 일어나려면 다른 Phase가 이미 14점 이상이어야 하므로 부작용이 미미하다.
 
 ## Step 3: Merge Issues
 
@@ -90,9 +92,10 @@
 
 ```
 ### Plan Review Summary
-- Total Score: {score}/120
+- Total Score: {score}/130
 - Verdict: {PASS|NEEDS_REVISION|MAJOR_ISSUES}
 - Strategy Used: {Sequential|Subagent 2x|Subagent 4x|Team mode}
+- Phase 6 (Empirical): {CONFIRMED|REFUTED|INCONCLUSIVE|SKIPPED|ERROR} (sub_session: {id|n/a})
 - User-approved fixes (single): {count} items
 - User-selected fixes (multi): {count} items
 - Skipped by user: {count} items
@@ -137,17 +140,19 @@ Iterative Deep Re-Review (Step 5)에서 여러 패스의 결과를 집계하는 
 - **Skip된 Phase:** 이전 iteration에서 0점이어서 skip된 Phase는 0점 유지
 - **Lightweight Phase:** 확인 결과에 따라 조정된 점수 사용 (false positive 제거 시 감소)
 - **False positive 처리:** 재검증에서 false positive로 판정된 이슈의 점수는 해당 Phase 총점에서 차감
+- **Phase 6 제외:** Phase 6은 deep re-review 대상에서 제외한다. debug-verify가 자체 카파시 루프를 가지므로 중복 회피. Phase 6 SCORE는 첫 패스 값을 마지막 iteration까지 그대로 유지하고, full_review_phases / lightweight_phases 어느 분류에도 포함시키지 않는다.
 
 ### Pass History Tracking
 
 각 iteration의 per-phase 점수를 기록하여 Score Progression에 사용:
 ```
 pass_history = [
-  { pass: 1, scores: { p1: N, p2: N, p3: N, p4: N, p5: N }, total: N },
-  { pass: 2, scores: { p1: N, p2: N, p3: N, p4: N, p5: N }, total: N },
+  { pass: 1, scores: { p1: N, p2: N, p3: N, p4: N, p5: N, p6: N }, total: N },
+  { pass: 2, scores: { p1: N, p2: N, p3: N, p4: N, p5: N, p6: N }, total: N },
   ...
 ]
 ```
+(p6는 첫 패스 값을 모든 패스에 그대로 복사)
 
 ## Deep Review Final Output Format
 
@@ -155,12 +160,13 @@ Iterative Deep Re-Review가 실행된 경우 아래 확장 형식을 사용:
 
 ```
 ### Plan Review Summary (Deep Review)
-- Total Score: {최종 총점}/120
+- Total Score: {최종 총점}/130
 - Verdict: {PASS|NEEDS_REVISION|MAJOR_ISSUES}
 - Strategy Used: {초기 전략}
 - Review Depth: {N} passes (initial + {N-1} deep re-review)
 - Score Progression: Pass 1: {s1} → Pass 2: {s2} [→ Pass 3: {s3}]
 - Issues Confirmed: {count} | False Positives Removed: {count} | New Issues Found: {count}
+- Phase 6 (Empirical): {CONFIRMED|REFUTED|INCONCLUSIVE|SKIPPED|ERROR} (sub_session: {id|n/a}, fixed at pass 1)
 - User-approved fixes (single): {count} items
 - User-selected fixes (multi): {count} items
 - Skipped by user: {count} items
@@ -174,6 +180,7 @@ Iterative Deep Re-Review가 실행된 경우 아래 확장 형식을 사용:
 | 3. Completeness | {s} | {s/skipped} | {s/-} | {s} |
 | 4. Risk | {s} | {s/skipped} | {s/-} | {s} |
 | 5. Security | {s} | {s/skipped} | {s/-} | {s} |
+| 6. Empirical | {s} | (carried) | (carried) | {s} |
 
 ### Issues (by severity)
 {confirmed 이슈 먼저}

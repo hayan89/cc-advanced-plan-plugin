@@ -6,11 +6,12 @@ description: >
   PostToolUse 훅의 [MAGIC KEYWORD: plan-review]로 자동 활성화됩니다.
 ---
 
-# Plan Review v2.2
+# Plan Review v2.3
 
 플랜 파일을 프로젝트 지시사항과 코드베이스 구성에 대해 5축으로 비판적 검토하는 스킬.
 복잡도에 따라 순차 실행, subagent 병렬, 또는 team mode를 자동 선택합니다.
 첫 번째 리뷰에서 이슈 발견 시, iterative deep re-review로 false positive을 제거하고 이슈 검증 정확도를 높입니다.
+v2.3부터 Phase 6 (Empirical Delegation)을 모든 분기 끝에 추가하여, 플랜의 데이터 가정을 debug-verify로 위임 검증합니다.
 
 ## When This Activates
 
@@ -64,6 +65,7 @@ Plan complexity: {tier} ({N} tasks, {M} lines) → {strategy}
 4. `skills/plan-review/phases/phase-3-completeness.md` 읽고 실행
 5. `skills/plan-review/phases/phase-4-risk.md` 읽고 실행
 6. `skills/plan-review/phases/phase-5-security.md` 읽고 실행
+7. `skills/plan-review/phases/phase-6-empirical-delegation.md` 읽고 실행 (메인 세션 직접 — Skill tool로 debug-verify 호출)
 
 각 Phase 결과를 skills/plan-review/phases/common-context.md의 Output Format에 맞춰 기록.
 → Step 4로 이동.
@@ -136,7 +138,8 @@ Phase 2 결과와 Phase 3 결과를 각각 별도로 출력하세요.
 **범위 제약:** 너의 책임은 위 Phase 검토 결과 반환까지다. Step 4 이후(집계/판정/사용자 선택/플랜 파일 수정)는 절대 수행하지 말 것. AskUserQuestion/Edit/Write 호출 금지 — Read/Glob/Grep만 사용.
 ```
 
-두 에이전트의 결과를 수집 → Step 4로 이동.
+두 에이전트의 결과를 수집한 후, **Phase 6 실행 (메인 세션 직접):** `skills/plan-review/phases/phase-6-empirical-delegation.md`를 읽고 실행. Skill tool로 debug-verify를 호출하므로 subagent 병렬화 X.
+→ Phase 1~6 결과를 모아 Step 4로 이동.
 
 ### Step 3C: Subagent Parallel (Complex — 4 agents)
 
@@ -196,7 +199,8 @@ Phase 4 결과와 Phase 5 결과를 각각 별도로 출력하세요.
 **범위 제약:** 너의 책임은 위 Phase 검토 결과 반환까지다. Step 4 이후(집계/판정/사용자 선택/플랜 파일 수정)는 절대 수행하지 말 것. AskUserQuestion/Edit/Write 호출 금지 — Read/Glob/Grep만 사용.
 ```
 
-4개 에이전트 결과 수집 → Step 4로 이동.
+4개 에이전트 결과 수집 후, **Phase 6 실행 (메인 세션 직접):** `skills/plan-review/phases/phase-6-empirical-delegation.md`를 읽고 실행. Skill tool로 debug-verify를 호출하므로 subagent 병렬화 X.
+→ Phase 1~6 결과를 모아 Step 4로 이동.
 
 ### Step 3D: Team Mode (Massive — 4 members)
 
@@ -214,7 +218,8 @@ Phase 4 결과와 Phase 5 결과를 각각 별도로 출력하세요.
 
 3. **결과 수집:** 4명의 결과를 모두 수신할 때까지 대기.
 
-4개 멤버 결과 수집 → Step 4로 이동.
+4개 멤버 결과 수집 후, **Phase 6 실행 (메인 세션 직접):** `skills/plan-review/phases/phase-6-empirical-delegation.md`를 읽고 실행. Skill tool로 debug-verify를 호출하므로 subagent/팀 병렬화 X.
+→ Phase 1~6 결과를 모아 Step 4로 이동.
 
 ### Step 4: Aggregate Results
 
@@ -353,3 +358,5 @@ EOF
 - **Evidence 필수:** 모든 이슈에 file:line 참조 또는 grep 결과 등 근거 포함.
 - **범위 준수:** 플랜 범위 밖의 개선 제안 금지.
 - **에이전트 실패 처리:** 에이전트가 실패하거나 결과를 반환하지 않으면, 해당 Phase 점수 = 0으로 처리하고 나머지 결과로 부분 집계. 실패한 Phase를 경고로 표시.
+- **Phase 6 sequential 강제:** Phase 6은 항상 메인 세션에서 직접 실행한다. subagent/팀 멤버에서 호출 금지 — debug-verify Skill 호출이 메인 세션 컨텍스트(AskUserQuestion, MCP 도구 가용성 점검)를 요구한다.
+- **Plan mode 시그널 전파:** plan mode에서 Phase 6은 임시 디버깅 플랜 상단에 `plan_mode: true` 헤더를 삽입해 read-only 시그널을 debug-verify에 전파한다. debug-verify가 forbidden 도구를 시도하면 호출자가 INCONCLUSIVE로 처리한다.

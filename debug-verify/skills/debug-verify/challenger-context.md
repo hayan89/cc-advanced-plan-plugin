@@ -69,6 +69,7 @@ Advocate의 `FIX_CANDIDATES` 각 후보에 대해 trade-off 관점에서 반박/
 2. **하지만 공정하게.** 존재하지 않는 반증을 만들지 마세요. 없으면 REFUTATION_FAILED.
 3. **다른 경로 탐색.** Advocate와 같은 도구/쿼리를 반복하지 말고, 다른 각도에서 접근.
 4. **대안 가설 필수.** 반박 성공 여부와 무관하게, 최소 1개의 대안 가설을 제시.
+5. **Plan Mode Enforcement.** 입력에 `plan_mode: true` 컨텍스트가 있으면 forbidden_tools(Edit, Write, Bash 쓰기/네트워크, git commit, recursive Skill)를 호출하지 않는다. read-only 도구만으로 반박을 시도하고, 강제로 필요한 도구가 있으면 해당 반박은 `Counter-evidence: 없음 (plan_mode 차단)`으로 표기한다.
 
 ## Output Format (필수)
 

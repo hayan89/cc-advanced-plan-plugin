@@ -8,8 +8,8 @@
   "plugins": [
     {
       "name": "plan-review",
-      "description": "Automatic plan review plugin — validates plans against project directives and codebase structure. Supports parallel review via subagent or team mode.",
-      "version": "2.2.0",
+      "description": "Automatic plan review plugin — validates plans against project directives and codebase structure. Supports parallel review via subagent or team mode. v2.3 adds Phase 6 (Empirical Delegation) for empirical data verification via debug-verify.",
+      "version": "2.3.0",
       "author": {
         "name": "hyunseung"
       },
@@ -17,13 +17,13 @@
     },
     {
       "name": "debug-verify",
-      "description": "Debug verification plugin — validates debugging hypotheses against real data using Advocate + Challenger dual-agent Kapasi Loop.",
-      "version": "1.0.0",
+      "description": "Debug verification plugin — validates debugging hypotheses against real data using Advocate + Challenger dual-agent Kapasi Loop. v1.1 adds Pre-Advocate Classifier and Tool Coverage Audit that force tool calls for data-bound claims.",
+      "version": "1.1.0",
       "author": {
         "name": "hyunseung"
       },
       "source": "./debug-verify"
     }
   ],
-  "version": "3.0.0"
+  "version": "3.1.0"
 }
