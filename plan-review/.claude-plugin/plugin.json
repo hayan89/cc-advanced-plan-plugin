@@ -1,7 +1,7 @@
 {
   "name": "plan-review",
-  "description": "Automatic plan review plugin — validates plans against project directives and codebase structure after plan file creation. Supports parallel review via subagent or team mode, with iterative deep re-review for false positive elimination. v2.3 adds Phase 6 (Empirical Delegation) that delegates plan data assumptions to debug-verify for live verification.",
-  "version": "2.3.0",
+  "description": "Automatic plan review plugin — validates plans against project directives and codebase structure after plan file creation. Dispatches Phase 1~5 each as an independent leaf in parallel (Team mode preferred, subagent 5x parallel fallback), with iterative deep re-review for false positive elimination. Phase 6 (Empirical Delegation) delegates plan data assumptions to debug-verify for live verification from the main session.",
+  "version": "2.4.0",
   "author": { "name": "hyunseung" },
   "license": "MIT",
   "keywords": ["plan", "review", "automation", "harness", "parallel", "subagent", "team", "claude-code"]

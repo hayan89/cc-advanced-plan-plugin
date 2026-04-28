@@ -7,31 +7,27 @@ Claude Code plugin that automatically reviews plans against project directives a
 When you write or edit a plan file (`~/.claude/plans/*.md`), this plugin:
 
 1. **Detects** the plan file change via a PostToolUse hook
-2. **Assesses** plan complexity (line count, task count)
-3. **Selects strategy** based on complexity:
-   - Trivial: Sequential review (direct execution)
-   - Standard: 2 parallel subagents
-   - Complex: 4 parallel subagents
-   - Massive: Team mode with 4 reviewers
-4. **Reviews** the plan against 5 axes:
+2. **Dispatches** Phase 1~5 each as an independent leaf in parallel (5 leaves total). Team mode is used when available; otherwise falls back to 5 parallel subagents.
+3. **Reviews** the plan against 5 axes:
    - Directive compliance (CLAUDE.md, AGENTS.md, rules)
    - Project structure alignment (file paths, naming, tech stack)
    - Completeness & critical gaps (missing steps, tests, verification)
    - Risk assessment (data integrity, breaking changes, performance, compatibility)
    - Security assessment (auth/authz, input validation, secrets, data exposure, OWASP patterns)
-5. **Aggregates** results and scores (0-120 scale, lower is better)
-6. **Auto-fixes** minor issues (score ≤5) and requests approval for major ones
+4. **Empirical delegation (Phase 6):** invokes `debug-verify` from the main session to verify data-dependent assumptions in the plan.
+5. **Aggregates** results and scores (max 130, lower is better)
+6. **Requests user approval** for fixes via AskUserQuestion (single-candidate gate or multi-candidate selection)
 
-## Complexity Tiers
+## Dispatch Strategy
 
-| Tier | Condition | Strategy | Agents |
-|------|-----------|----------|--------|
-| Massive | tasks >20 OR lines >500 | Team mode | 4 members |
-| Complex | tasks >10 OR lines >200 | Subagent parallel | 4 agents |
-| Trivial | tasks ≤3 AND lines ≤50 | Sequential | 0 (direct) |
-| Standard | everything else | Subagent parallel | 2 agents |
+Single unified strategy — no complexity routing.
 
-Evaluated top-to-bottom, first match applies.
+| Mode | When | Agents |
+|------|------|--------|
+| Team mode | TeamCreate available | 5 members (`reviewer-phase-1` ~ `reviewer-phase-5`) |
+| Subagent 5x parallel | TeamCreate unavailable / fails | 5 parallel `Agent` calls |
+
+Phase 6 (Empirical Delegation) is always executed in the main session, never delegated to a subagent or team member.
 
 ## Debounce
 

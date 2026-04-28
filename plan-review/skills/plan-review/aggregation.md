@@ -94,7 +94,7 @@
 ### Plan Review Summary
 - Total Score: {score}/130
 - Verdict: {PASS|NEEDS_REVISION|MAJOR_ISSUES}
-- Strategy Used: {Sequential|Subagent 2x|Subagent 4x|Team mode}
+- Strategy Used: {Team mode (5 leaves)|Subagent 5x parallel}
 - Phase 6 (Empirical): {CONFIRMED|REFUTED|INCONCLUSIVE|SKIPPED|ERROR} (sub_session: {id|n/a})
 - User-approved fixes (single): {count} items
 - User-selected fixes (multi): {count} items
@@ -162,7 +162,7 @@ Iterative Deep Re-Review가 실행된 경우 아래 확장 형식을 사용:
 ### Plan Review Summary (Deep Review)
 - Total Score: {최종 총점}/130
 - Verdict: {PASS|NEEDS_REVISION|MAJOR_ISSUES}
-- Strategy Used: {초기 전략}
+- Strategy Used: {Team mode (5 leaves)|Subagent 5x parallel}
 - Review Depth: {N} passes (initial + {N-1} deep re-review)
 - Score Progression: Pass 1: {s1} → Pass 2: {s2} [→ Pass 3: {s3}]
 - Issues Confirmed: {count} | False Positives Removed: {count} | New Issues Found: {count}

@@ -1,7 +1,7 @@
 # Deep Re-Review Context
 
 이 파일은 Iterative Deep Re-Review 단계에서 사용하는 에이전트 프롬프트 템플릿입니다.
-Step 5에서 Phase 선별 결과에 따라 Template A 또는 Template B를 사용합니다.
+Step 4에서 Phase 선별 결과에 따라 Template A 또는 Template B를 사용합니다.
 
 ---
 
