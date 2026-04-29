@@ -1,0 +1,8 @@
+{
+  "name": "data-grounding",
+  "description": "Pre-plan data grounding plugin — collects read-only DB/log/metric facts before plan authoring for debugging-flavored requests, narrowing hypotheses upstream of plan-review/debug-verify.",
+  "version": "1.0.0",
+  "author": { "name": "hyunseung" },
+  "license": "MIT",
+  "keywords": ["plan", "debugging", "grounding", "evidence", "pre-plan", "harness", "claude-code"]
+}

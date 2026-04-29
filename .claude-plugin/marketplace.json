@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "newworld-harness",
-  "description": "Harness engineering marketplace — plan validation and debug verification plugins",
+  "description": "Harness engineering marketplace — pre-plan data grounding, plan validation, and debug verification plugins",
   "owner": {
     "name": "hyunseung"
   },
@@ -23,7 +23,16 @@
         "name": "hyunseung"
       },
       "source": "./debug-verify"
+    },
+    {
+      "name": "data-grounding",
+      "description": "Pre-plan data grounding plugin — collects read-only DB/log/metric facts before plan authoring for debugging-flavored requests, narrowing hypotheses upstream of plan-review/debug-verify. Triggers via UserPromptSubmit hook on debug keywords (≥2 matches) or manual /ground command. Single Grounder agent with read-only enforcement and 12-call total budget.",
+      "version": "1.0.0",
+      "author": {
+        "name": "hyunseung"
+      },
+      "source": "./data-grounding"
     }
   ],
-  "version": "3.1.1"
+  "version": "3.2.0"
 }
