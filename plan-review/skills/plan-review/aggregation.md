@@ -112,6 +112,20 @@
 
 ### Skipped by User
 {사용자가 "적용 안 함" 또는 "모두 건너뛰기" 선택한 이슈 — 미수정 상태로 보고서에 남김}
+
+### TL;DR (한눈에)
+- **Verdict / Score:** {PASS|NEEDS_REVISION|MAJOR_ISSUES} — {score}/130
+- **다음 액션:** {verdict별 한 줄 — PASS면 "병합 가능", NEEDS_REVISION이면 "{n}건 수정 후 재검토", MAJOR_ISSUES면 "Critical {n}건 우선 해결"}
+- **핵심 이슈 Top {3~5}:**
+  1. [{severity}] Phase {N} — {간단 설명} ({Location})
+  2. ...
+  (severity CRITICAL → IMPORTANT → MINOR 순으로 상위 5개. 5개 미만이면 있는 만큼만)
+- **수정 카운트:** Approved {n} / Selected {m} / Skipped {k} / Pending {p}
+- **남은 의문점 / Followup:**
+  - Phase 6: {SKIPPED/INCONCLUSIVE/ERROR인 경우만 항목 추가}
+  - Pending 이슈: {count}건 (수정 제안 없음 — 사용자 판단 필요)
+  - {Skipped 이슈 중 추적 권장 항목 0~2개}
+  (해당 없으면 "없음"으로 한 줄)
 ```
 
 ## Multi-Iteration Aggregation Rules
@@ -198,6 +212,21 @@ Iterative Deep Re-Review가 실행된 경우 아래 확장 형식을 사용:
 
 ### Skipped by User
 {사용자가 "적용 안 함" 또는 "모두 건너뛰기" 선택한 이슈}
+
+### TL;DR (한눈에)
+- **Verdict / Score:** {PASS|NEEDS_REVISION|MAJOR_ISSUES} — {score}/130
+- **Review Depth:** {N} passes · Confirmed {c} / FP removed {f} / New {nw}
+- **다음 액션:** {verdict별 한 줄 — PASS면 "병합 가능", NEEDS_REVISION이면 "{n}건 수정 후 재검토", MAJOR_ISSUES면 "Critical {n}건 우선 해결"}
+- **핵심 이슈 Top {3~5}:**
+  1. [{severity}] Phase {N} — {간단 설명} ({Location})
+  2. ...
+  (severity CRITICAL → IMPORTANT → MINOR 순으로 상위 5개. 5개 미만이면 있는 만큼만)
+- **수정 카운트:** Approved {n} / Selected {m} / Skipped {k} / Pending {p}
+- **남은 의문점 / Followup:**
+  - Phase 6: {SKIPPED/INCONCLUSIVE/ERROR인 경우만 항목 추가}
+  - Pending 이슈: {count}건 (수정 제안 없음 — 사용자 판단 필요)
+  - {Skipped 이슈 중 추적 권장 항목 0~2개}
+  (해당 없으면 "없음"으로 한 줄)
 ```
 
 Deep Re-Review가 실행되지 않은 경우 (진입 조건 미충족), 기존 Final Output Format을 그대로 사용.
