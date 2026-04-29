@@ -32,6 +32,18 @@
 
 ### Recommended Action
 {판정별 안내 메시지 — CONFIRMED면 Selected Fix Direction을 본문에 통합}
+
+### TL;DR (한눈에)
+- **Verdict:** {CONFIRMED|REFUTED|INCONCLUSIVE} — Confidence {HIGH|MEDIUM|LOW}
+- **다음 액션:** {CONFIRMED→ "수정 계획 작성 (~/.claude/plans/)" / REFUTED→ "대안 가설로 재디버깅" / INCONCLUSIVE→ "수동 확인 항목 처리 후 재실행"}
+- **핵심 발견 Top 3:**
+  1. {Verified Claims 표에서 Final 판정과 함께 한 줄}
+  2. ...
+- **검증 카운트:** Loops 1/3 · Claims confirmed {c} / refuted {r} / inconclusive {i} · Consensus {AGREED|DISAGREED}
+- **남은 의문점 / Followup:**
+  - 대안 가설: {Likelihood HIGH 항목만 1~2개, 없으면 생략}
+  - 수동 확인 필요: {Manual Checks 항목 수}건
+  (해당 없으면 "없음")
 ```
 
 ## Multi-Loop Report (루프 2회 이상)
@@ -73,6 +85,18 @@
 
 ### Recommended Action
 {판정별 안내 메시지}
+
+### TL;DR (한눈에)
+- **Verdict:** {CONFIRMED|REFUTED|INCONCLUSIVE} — Confidence {HIGH|MEDIUM|LOW}
+- **다음 액션:** {CONFIRMED→ "수정 계획 작성 (~/.claude/plans/)" / REFUTED→ "대안 가설로 재디버깅" / INCONCLUSIVE→ "수동 확인 항목 처리 후 재실행"}
+- **핵심 발견 Top 3:**
+  1. {Verified Claims 표에서 Final 판정과 함께 한 줄}
+  2. ...
+- **검증 카운트:** Loops {N}/3 · Loop progression: {Loop 1 verdict} → {Loop 2 verdict} [→ Loop 3 verdict] · Claims confirmed {c} / refuted {r} / inconclusive {i}
+- **남은 의문점 / Followup:**
+  - 대안 가설: {Likelihood HIGH 항목만 1~2개, 없으면 생략}
+  - 수동 확인 필요: {Manual Checks 항목 수}건
+  (해당 없으면 "없음")
 ```
 
 ## Recommended Action Templates
